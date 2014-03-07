@@ -29,6 +29,62 @@ import opennlp.uima.tokenize.Tokenizer;
  * @author ngtrhieu0011
  */
 public class Indexer {
+	/**
+	 * The private implementation of Vocabulary in Dictionary which basically a implementation of {@code <word, df>}
+	 * 		where <b>word</b> is the stemmed token and <b>df</b> is the number of documents the word apprears in<br/>
+	 * The class supports <b>Comparable</b>, which basically compare the word of the Vocabulary <br/>
+	 * @author ngtrhieu0011
+	 */
+	private class Vocabulary implements Comparable<Vocabulary> {
+		private String _word;
+		private int _df;
+		/**
+		 * Create a new Vocabulary <br/>
+		 * The df is set to 1 when initialised <br/>
+		 * @param word
+		 */
+		public Vocabulary (String word) {
+			_word = word;
+			_df = 1;
+		}
+		/**
+		 * Create a new Vocabulary and set the document frequency (df)<br/>
+		 * @param word
+		 * @param df
+		 */
+		public Vocabulary (String word, int df) {
+			_word = word;
+			_df = df;
+		}
+		/**
+		 * Getter for word
+		 * @return word
+		 */
+		public String word () {
+			return _word;
+		}
+		/**
+		 * Getter for document frequency (df)
+		 * @return df
+		 */
+		public int df () {
+			return _df;
+		}
+		/**
+		 * Comparator
+		 */
+		public int compareTo(Vocabulary target) {
+			return _word.compareTo(target.word());
+		}
+		/**
+		 * Increase Document Frequency (df) <br/>
+		 * This is called when you register new document <br/>
+		 */
+		public void increaseDocFreq () {
+			_df ++;
+		}
+	}
+	
 	private final String DICTONARY_FILENAME = "dictionary.txt";
 	private final String DOCUMENT_FILENAME = "documents.txt";
 	private final String POSTING_FILENAME = "postings.txt";
@@ -37,7 +93,8 @@ public class Indexer {
 	private ArrayList<String> _indexDocument;
 	
 	private ArrayList<String> _documentList;
-	private ArrayList<String> _dictionary;
+	private ArrayList<Vocabulary> _dictionary;
+	private ArrayList<ArrayList<Integer>> _localPosting;
 	
 	/**
 	 * Standard Constructor. <br/>
@@ -96,6 +153,7 @@ public class Indexer {
 	 * @throws	IOException	when IO error occurs
 	 */
 	public void start () throws IOException {
+		initializeLocalPosting ();
 		fetchDictionary ();
 		fetchDocumentList ();
 		
@@ -104,6 +162,13 @@ public class Indexer {
 		updateDictionary ();
 		updateDocumentList ();
 		updatePosting ();
+	}
+	
+	/**
+	 * Initialise Local Posting <br/>
+	 */
+	private void initializeLocalPosting () {
+		_localPosting = new ArrayList<ArrayList<Integer>>();
 	}
 	
 	/**
@@ -117,14 +182,15 @@ public class Indexer {
 		BufferedReader br = new BufferedReader (isr);
 		
 		// Initialise empty dictionary
-		_dictionary = new ArrayList<String>();
+		_dictionary = new ArrayList<Vocabulary>();
 		
 		// Fetch data from file into local dictionary
 		String nextLine = null;
 		do {
 			nextLine = br.readLine ();
-			if (nextLine != null) {
-				_dictionary.add (nextLine);
+			Vocabulary newVocabulary = parseToVocabulary (nextLine);
+			if (newVocabulary != null) {
+				_dictionary.add (newVocabulary);
 			}
 		} while (nextLine != null);
 		
@@ -132,6 +198,26 @@ public class Indexer {
 		br.close ();
 		isr.close ();
 		fis.close ();
+	}
+	
+	/**
+	 * Parse a line from dictionary file into a Vocabulary <br/> 
+	 * @param	line				from dictionary
+	 * @return	<b>Vocabulary</b>	the parsed Vocabulary <br/>
+	 * 			<b>null</b>			if the <b>line</b> is syntactically incorrect
+	 */
+	private Vocabulary parseToVocabulary (String line) {
+		Vocabulary vocabulary = null;
+		try {
+			String[] tokens = line.split(" ");
+			String word = tokens[0];
+			int df = Integer.parseInt (tokens[1]);
+			vocabulary = new Vocabulary (word, df);
+		} catch (Exception e) {
+			// Catch Parsing Error
+			vocabulary = null;
+		}
+		return vocabulary;
 	}
 	
 	/**
@@ -218,7 +304,7 @@ public class Indexer {
 	 */
 	private void indexDocument () {
 		// Adding new document into _documentList
-		int docID = registerNewDocument ();
+		int docID = registerNewDocument (_docName);
 		
 		// Initialise the tokenizer, stemmer and filter
 		WhitespaceTokenizer tokenizer = WhitespaceTokenizer.INSTANCE;
@@ -237,14 +323,76 @@ public class Indexer {
 			for (String token : tokens) {
 				token = stemmer.stem(token);
 				if (!filter.isStopword(token)) {
-					int wordID = checkAndAddWordIntoDictionary (token, docID);
-					updateToLocalPosting (wordID, docID);
+					int vocabularyID = checkAndAddWordIntoDictionary (token);
+					updateToLocalPosting (vocabularyID, docID);
 				}
 			}
 		}
 	}
 	
+	/**
+	 * Register new document into the _documentList and return its new docID <br/>
+	 * Return -1 if the document is already in the list <br/>
+	 * @return	docID	the new docID assigned to the new document
+	 * 			-1		if the document is already indexed in the _documentList
+	 * 
+	 */
+	private int registerNewDocument (String docName) {
+		int docID;
+		if (! _documentList.contains(docName)) {
+			// The docName is not found in the _documentList
+			// add the docName into the documentList and return its new index
+			_documentList.add(docName);
+			docID = _documentList.indexOf(docName);
+		} else {
+			// The docName is already in the _documentList
+			// return -1
+			docID = -1;
+		}
+		return docID;
+	}
 	
+	/**
+	 * Check for the dictionary for the token <br/>
+	 * If the token exists in the dictionary, increase its df <br/>
+	 * Otherwise, create a new vocabulary and set the df to 1 <br/>
+	 * Return the vocabularyID of the token in the dictionary <br/> 
+	 * @param token
+	 * @return vocabularyID
+	 */
+	private int checkAndAddWordIntoDictionary (String token) {
+		// Create a new temporary vocabulary
+		Vocabulary newVocabulary = new Vocabulary(token);
+		
+		int vocabularyId = -1;
+		
+		// Find the similar vocabulary in the Dictionary
+		// If found the increase the df of that word and return its index
+		for (Vocabulary vocabulary : _dictionary) {
+			if (vocabulary.equals(newVocabulary)) {
+				vocabularyId = _dictionary.indexOf(vocabulary);
+				vocabulary.increaseDocFreq();
+				break;
+			}
+		}
+		
+		// Cannot be found: add newVocaburary into the dictionary and return its index
+		if (vocabularyId == -1) {
+			_dictionary.add (newVocabulary);
+			vocabularyId = _dictionary.indexOf(newVocabulary);
+		}
+		
+		return vocabularyId;
+	}
+	
+	/**
+	 * TODO: write description
+	 * @param vocabularyID
+	 * @param docID
+	 */
+	private void updateToLocalPosting (int vocabularyID, int docID) {
+		// TODO: implement this next time
+	}
 	
 	private synchronized void updateDictionary () {
 		
