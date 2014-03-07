@@ -2,12 +2,14 @@ package search_engine;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import opennlp.tools.tokenize.WhitespaceTokenizer;
+import opennlp.uima.tokenize.Tokenizer;
 
 /**
  * This class provide index service to index a single document to the database of the search engine. <br/>
@@ -215,7 +217,31 @@ public class Indexer {
 	 * index the _indexDocument into _documentList, _dictionary and _postings
 	 */
 	private void indexDocument () {
+		// Adding new document into _documentList
+		int docID = registerNewDocument ();
 		
+		// Initialise the tokenizer, stemmer and filter
+		WhitespaceTokenizer tokenizer = WhitespaceTokenizer.INSTANCE;
+		Stemmer stemmer = new Stemmer ();
+		StopwordFilter filter = new StopwordFilter (stemmer);
+		try {
+			filter.initialize();
+		} catch (IOException e) {
+			System.out.println ("IO error when initialize the Filter");
+			e.printStackTrace();
+			return;
+		}
+		
+		for (String line : _indexDocument) {
+			String[] tokens = tokenizer.tokenize(line);
+			for (String token : tokens) {
+				token = stemmer.stem(token);
+				if (!filter.isStopword(token)) {
+					int wordID = checkAndAddWordIntoDictionary (token, docID);
+					updateToLocalPosting (wordID, docID);
+				}
+			}
+		}
 	}
 	
 	
