@@ -59,8 +59,7 @@ public class Indexer {
     private ArrayList<String> _documentList;
 
     private Dictionary _dictionary;
-
-    private ArrayList<ArrayList<Integer>> _localPosting;
+    private PostingList _localPosting;
 
     /**
      * Standard Constructor. <br/>
@@ -78,9 +77,6 @@ public class Indexer {
      *             when reading the file
      */
     public Indexer(String docName, String fileName) throws IOException {
-	// Initialise the Dictionary
-	_dictionary = new Dictionary();
-
 	// Save the docName into local field
 	_docName = docName;
 
@@ -135,7 +131,10 @@ public class Indexer {
      *             when IO error occurs
      */
     public void start() throws IOException {
-	initializeLocalPosting();
+	_localPosting = new PostingList ();
+	_dictionary = new Dictionary();
+	_documentList = new ArrayList<String>();
+	
 	_dictionary.fetchDictionary();
 	fetchDocumentList();
 
@@ -144,13 +143,6 @@ public class Indexer {
 	_dictionary.updateDictionary();
 	updateDocumentList();
 	updatePosting();
-    }
-
-    /**
-     * Initialise Local Posting <br/>
-     */
-    private void initializeLocalPosting() {
-	_localPosting = new ArrayList<ArrayList<Integer>>();
     }
 
     /**
@@ -305,10 +297,7 @@ public class Indexer {
      * @param docID
      */
     private void updateToLocalPosting(int vocabularyID, int docID) {
-	ArrayList<Integer> posting = _localPosting.get(docID);
-	for (Integer i : posting) {
 
-	}
     }
 
     private synchronized void updateDocumentList() {
