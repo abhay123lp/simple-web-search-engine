@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 /**
- * The dictionary store all the known Vocabulary as a tuple <vocabulary,df> where df
+ * The dictionary store all the known Vocabulary as a tuple {@code <vocabulary,df>} where df
  * is <b>document frequency</b>: number of documents this word has appeared. <br/>
  */
 

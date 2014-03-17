@@ -431,6 +431,8 @@ class Stemmer implements IStemmer
               }
               if (ch < 0) break;
               System.out.print((char)ch);
+              
+              in.close ();
            }
          }
          catch (IOException e)
