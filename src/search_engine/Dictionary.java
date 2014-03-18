@@ -55,16 +55,15 @@ class Dictionary {
 	 * Update the local Dictionary to file
 	 */
 	public synchronized void writeToFile() throws IOException {
-		// TODO: implementing
 		// Initialise the Stream writers
 		FileOutputStream fos = new FileOutputStream(DICTONARY_FILENAME, false);
 		OutputStreamWriter osw = new OutputStreamWriter(fos);
 		BufferedWriter bw = new BufferedWriter(osw);
-		
+
 		// Write each vocabulary to each line of the file.
 		for (int vocabularyId = 0; vocabularyId < _dictionary.size(); vocabularyId++) {
-			Vocabulary vocabulary = getVocabulary (vocabularyId);
-			bw.write (vocabulary.word() + " " + vocabulary.df() + "/n");
+			Vocabulary vocabulary = getVocabulary(vocabularyId);
+			bw.write(vocabulary.word() + " " + vocabulary.df() + "/n");
 		}
 
 		// Close stream writers
@@ -145,7 +144,8 @@ class Dictionary {
 
 	/**
 	 * Parse a line from dictionary file into a Vocabulary <br/>
-	 * Extract both the word (1st token) and df (2nd token) to create a new Vocabulary <br/>
+	 * Extract both the word (1st token) and df (2nd token) to create a new
+	 * Vocabulary <br/>
 	 * 
 	 * @param line
 	 *            from dictionary

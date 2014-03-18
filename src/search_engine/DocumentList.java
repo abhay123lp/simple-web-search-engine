@@ -1,9 +1,12 @@
 package search_engine;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 
 /**
@@ -51,6 +54,27 @@ class DocumentList {
 	}
 
 	/**
+	 * Update the local Document List to file
+	 * @throws IOException 
+	 */
+	public synchronized void writeToFile() throws IOException {
+		// Initialise the Stream writers
+		FileOutputStream fos = new FileOutputStream(DOCUMENT_FILENAME, false);
+		OutputStreamWriter osw = new OutputStreamWriter(fos);
+		BufferedWriter bw = new BufferedWriter(osw);
+
+		// Write each document to each line of the file.
+		for (String docName : _documentList) {
+			bw.write(docName + "/n");
+		}
+
+		// Close stream writers
+		bw.close();
+		osw.close();
+		fos.close();
+	}
+
+	/**
 	 * Add a document into the documentList and return its docId <br/>
 	 * If the document has been already added, it will not be added again <br/>
 	 * 
@@ -89,12 +113,5 @@ class DocumentList {
 		} catch (Exception e) {
 			return null;
 		}
-	}
-
-	/**
-	 * Update the local Document List to file
-	 */
-	public synchronized void writeToFile() {
-		// TODO: un-implement method
 	}
 }
