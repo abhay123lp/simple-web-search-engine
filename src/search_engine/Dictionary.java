@@ -53,6 +53,9 @@ class Dictionary {
 
 	/**
 	 * Update the local Dictionary to file
+	 * 
+	 * @throws IOException
+	 *             when the file cannot be openned
 	 */
 	public synchronized void writeToFile() throws IOException {
 		// Initialise the Stream writers
@@ -96,8 +99,7 @@ class Dictionary {
 	 * Return a Vocabulary according to the vocabularyId <br/>
 	 * 
 	 * @param vocabularyId
-	 * @return Vocabulary if found <br/>
-	 *         null if not found
+	 * @return Vocabulary if found, null if not found
 	 */
 	public Vocabulary getVocabulary(int vocabularyId) {
 		if (vocabularyId < _dictionary.size()) {

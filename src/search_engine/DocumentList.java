@@ -55,7 +55,9 @@ class DocumentList {
 
 	/**
 	 * Update the local Document List to file
-	 * @throws IOException 
+	 * 
+	 * @throws IOException
+	 *             when the file cannot be opened
 	 */
 	public synchronized void writeToFile() throws IOException {
 		// Initialise the Stream writers
