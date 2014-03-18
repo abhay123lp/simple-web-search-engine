@@ -24,9 +24,9 @@ import opennlp.tools.tokenize.WhitespaceTokenizer;
  * 
  * <pre>
  * {
- *     &#064;code
- *     Indexer indexer = new Indexer(docName, document);
- *     indexer.start();
+ * 	&#064;code
+ * 	Indexer indexer = new Indexer(docName, document);
+ * 	indexer.start();
  * }
  * </pre>
  * 
@@ -39,273 +39,153 @@ import opennlp.tools.tokenize.WhitespaceTokenizer;
  * @author ngtrhieu0011
  */
 public class Indexer {
-    private final String DOCUMENT_FILENAME = "documents.txt";
-    private final String POSTING_FILENAME = "postings.txt";
+	private String _docName;
 
-    private String _docName;
+	/**
+	 * This private variable is use to store all the tokenized, stemmed words in
+	 * the original document sent to the Indexer <br/>
+	 */
+	private ArrayList<String> _indexDocument;
 
-    /**
-     * This private variable is use to store all the tokenized, stemmed words in
-     * the original document sent to the Indexer <br/>
-     */
-    private ArrayList<String> _indexDocument;
+	/**
+	 * The document list stores all the indexed document name (in this case, url
+	 * of the document) <br/>
+	 * Each document name is stored on a separated String <br/>
+	 * The docID of each document is the index of the String in the list <br/>
+	 */
+	private DocumentList _documentList;
 
-    /**
-     * The document list stores all the indexed document name (in this case, url
-     * of the document) <br/>
-     * Each document name is stored on a separated String <br/>
-     * The docID of each document is the index of the String in the list <br/>
-     */
-    private ArrayList<String> _documentList;
+	private Dictionary _dictionary;
+	private PostingList _localPosting;
 
-    private Dictionary _dictionary;
-    private PostingList _localPosting;
+	/**
+	 * Standard Constructor. <br/>
+	 * Pass the document to the Indexer as a file. <br/>
+	 * The indexer should only be noticed when the file is ready to use. <br/>
+	 * 
+	 * @param docName
+	 *            specifies the name of the document. In the search engine, this
+	 *            should be the link to the website.<br/>
+	 * @param fileName
+	 *            specifies the name of the file storing the document. This file
+	 *            should be able to open by the Indexer.<br/>
+	 * @throws IOException
+	 *             when the file cannot be opened or some IO errors happened
+	 *             when reading the file
+	 */
+	public Indexer(String docName, String fileName) throws IOException {
+		// Save the docName into local field
+		_docName = docName;
 
-    /**
-     * Standard Constructor. <br/>
-     * Pass the document to the Indexer as a file. <br/>
-     * The indexer should only be noticed when the file is ready to use. <br/>
-     * 
-     * @param docName
-     *            specifies the name of the document. In the search engine, this
-     *            should be the link to the website.<br/>
-     * @param fileName
-     *            specifies the name of the file storing the document. This file
-     *            should be able to open by the Indexer.<br/>
-     * @throws IOException
-     *             when the file cannot be opened or some IO errors happened
-     *             when reading the file
-     */
-    public Indexer(String docName, String fileName) throws IOException {
-	// Save the docName into local field
-	_docName = docName;
+		// Initialise the Stream readers
+		FileInputStream fis = new FileInputStream(fileName);
+		InputStreamReader isr = new InputStreamReader(fis);
+		BufferedReader br = new BufferedReader(isr);
 
-	// Initialise the Stream readers
-	FileInputStream fis = new FileInputStream(fileName);
-	InputStreamReader isr = new InputStreamReader(fis);
-	BufferedReader br = new BufferedReader(isr);
+		// Initialise empty document
+		_indexDocument = new ArrayList<String>();
 
-	// Initialise empty document
-	_indexDocument = new ArrayList<String>();
+		// Read from stream line by line and store into local document
+		String nextLine = null;
 
-	// Read from stream line by line and store into local document
-	String nextLine = null;
+		do {
+			nextLine = br.readLine();
+			if (nextLine != null) {
+				_indexDocument.add(nextLine);
+			}
+		} while (nextLine != null);
 
-	do {
-	    nextLine = br.readLine();
-	    if (nextLine != null) {
-		_indexDocument.add(nextLine);
-	    }
-	} while (nextLine != null);
-
-	// Close all the stream reader
-	br.close();
-	isr.close();
-	fis.close();
-    }
-
-    /**
-     * Recommended Constructor <br/>
-     * This constructor is safer to use, thus recommended. <br/>
-     * Pass the document to the Indexer as a List of String. <br/>
-     * 
-     * @param docName
-     *            specifies the name of the document. In the search engine, this
-     *            should be the link to the website.<br/>
-     * @param document
-     *            the List of String, each String represents a line in the
-     *            document. <br/>
-     */
-    public Indexer(String docName, List<String> document) {
-	// Save the references into local fields
-	_docName = docName;
-	_indexDocument = (ArrayList<String>) document;
-    }
-
-    /**
-     * Start method <br/>
-     * This method must be explicitly triggered in order for the Indexer to
-     * start indexing documents <br/>
-     * 
-     * @throws IOException
-     *             when IO error occurs
-     */
-    public void start() throws IOException {
-	_localPosting = new PostingList ();
-	_dictionary = new Dictionary();
-	_documentList = new ArrayList<String>();
-	
-	_dictionary.fetchDictionary();
-	fetchDocumentList();
-
-	indexDocument();
-
-	_dictionary.updateDictionary();
-	updateDocumentList();
-	updatePosting();
-    }
-
-    /**
-     * fetch the list of document names from file and store into _documentList <br/>
-     * 
-     * @throws IOException
-     *             when the file cannot be opened
-     */
-    private synchronized void fetchDocumentList() throws IOException {
-	// Initialise the Stream readers
-	FileInputStream fis = new FileInputStream(DOCUMENT_FILENAME);
-	InputStreamReader isr = new InputStreamReader(fis);
-	BufferedReader br = new BufferedReader(isr);
-
-	// Initialise empty dictionary
-	_documentList = new ArrayList<String>();
-
-	// Fetch data from file into local documentList
-	String nextLine = null;
-	do {
-	    nextLine = br.readLine();
-	    if (nextLine != null) {
-		_documentList.add(nextLine);
-	    }
-	} while (nextLine != null);
-
-	// Close stream readers
-	br.close();
-	isr.close();
-	fis.close();
-    }
-
-    /**
-     * fetch the specific line of posting from file <br/>
-     * 
-     * @throws IOException
-     *             when the file cannot be opened
-     * @return the array of int <br/>
-     *         null if the the the index is bigger then the number of lines in
-     *         the file <br/>
-     */
-    private int[] fetchPosting(int index) throws IOException {
-	String postingAsString = fetchPostingAsString(index);
-
-	if (postingAsString != null) {
-	    String[] postingAsArray = postingAsString.split(" ");
-	    int[] postings = new int[postingAsArray.length];
-	    for (int i = 0; i < postingAsArray.length; i++) {
-		postings[i] = Integer.parseInt(postingAsArray[i]);
-	    }
-	    return postings;
-	} else {
-	    return null;
-	}
-    }
-
-    /**
-     * fetch the specific line of posting from file <br/>
-     * 
-     * @throws IOException
-     *             when the file cannot be opened
-     * @return the posting as a String of numbers. This is to save time as this
-     *         method is synchronised <br/>
-     *         null if the the index is bigger then the number of lines in the
-     *         file <br/>
-     */
-    private synchronized String fetchPostingAsString(int index)
-	    throws IOException {
-	// Initialise the Stream readers
-	FileInputStream fis = new FileInputStream(POSTING_FILENAME);
-	InputStreamReader isr = new InputStreamReader(fis);
-	BufferedReader br = new BufferedReader(isr);
-
-	// Fetch data from file into local documentList
-	String nextLine = null;
-	int i = 0;
-	do {
-	    nextLine = br.readLine();
-	    if (nextLine != null) {
-		_documentList.add(nextLine);
-		i++;
-	    }
-	} while (nextLine != null || i == index);
-
-	// Close stream readers
-	br.close();
-	isr.close();
-	fis.close();
-
-	return nextLine;
-    }
-
-    /**
-     * index the _indexDocument into _documentList, _dictionary and _postings
-     */
-    private void indexDocument() {
-	// Adding new document into _documentList
-	int docID = registerNewDocument(_docName);
-
-	// Initialise the tokenizer, stemmer and filter
-	WhitespaceTokenizer tokenizer = WhitespaceTokenizer.INSTANCE;
-	Stemmer stemmer = new Stemmer();
-	StopwordFilter filter = new StopwordFilter(stemmer);
-	try {
-	    filter.initialize();
-	} catch (IOException e) {
-	    System.out.println("IO error when initialize the Filter");
-	    e.printStackTrace();
-	    return;
+		// Close all the stream reader
+		br.close();
+		isr.close();
+		fis.close();
 	}
 
-	for (String line : _indexDocument) {
-	    String[] tokens = tokenizer.tokenize(line);
-	    for (String token : tokens) {
-		token = stemmer.stem(token);
-		if (!filter.isStopword(token)) {
-		    int vocabularyID = _dictionary
-			    .checkAndAddWordIntoDictionary(token);
-		    updateToLocalPosting(vocabularyID, docID);
+	/**
+	 * Recommended Constructor <br/>
+	 * This constructor is safer to use, thus recommended. <br/>
+	 * Pass the document to the Indexer as a List of String. <br/>
+	 * 
+	 * @param docName
+	 *            specifies the name of the document. In the search engine, this
+	 *            should be the link to the website.<br/>
+	 * @param document
+	 *            the List of String, each String represents a line in the
+	 *            document. <br/>
+	 */
+	public Indexer(String docName, List<String> document) {
+		// Save the references into local fields
+		_docName = docName;
+		_indexDocument = (ArrayList<String>) document;
+	}
+
+	/**
+	 * Start method <br/>
+	 * This method must be explicitly triggered in order for the Indexer to
+	 * start indexing documents <br/>
+	 * 
+	 * @throws IOException
+	 *             when IO error occurs
+	 */
+	public void start() throws IOException {
+		// Initialise localPosting, dictionary and documentList
+		_localPosting = new PostingList();
+		_dictionary = new Dictionary();
+		_documentList = new DocumentList();
+
+		// Fetch information from file
+		_documentList.fetchDictionary();
+		_dictionary.fetchDictionary();
+
+		// Index document
+		indexDocument();
+
+		// Update the local knowledge to file
+		_documentList.writeToFile();
+		_dictionary.writeToFile();
+		_localPosting.writeToFile();
+	}
+
+	/**
+	 * index the _indexDocument into _documentList, _dictionary and _postings
+	 */
+	private void indexDocument() {
+		// Adding new document into _documentList and get its docId
+		int docId = _documentList.addDocument(_docName);
+
+		// Proceed if docId != -1, i.e: the document has not been indexed before
+		// Otherwise don't index
+		if (docId != -1) {
+			// Initialise the tokenizer, stemmer and filter
+			WhitespaceTokenizer tokenizer = WhitespaceTokenizer.INSTANCE;
+			Stemmer stemmer = new Stemmer();
+			StopwordFilter filter = new StopwordFilter(stemmer);
+
+			// Try initialise the Filter
+			try {
+				filter.initialize();
+			} catch (IOException e) {
+				System.out.println("IO error when initialize the Filter");
+				e.printStackTrace();
+				return;
+			}
+
+			// Index each word in the document
+			for (String line : _indexDocument) {
+				// Tokenize
+				String[] tokens = tokenizer.tokenize(line);
+				for (String token : tokens) {
+					// Stem
+					token = stemmer.stem(token);
+					// Filter stop-word
+					if (!filter.isStopword(token)) {
+						int vocabularyId = _dictionary.checkAndAddWord(token);
+						Posting posting = _localPosting
+								.addAndGetPosting(vocabularyId);
+						posting.addDocId(docId);
+					}
+				}
+			}
 		}
-	    }
 	}
-    }
-
-    /**
-     * Register new document into the _documentList and return its new docID <br/>
-     * Return -1 if the document is already in the list <br/>
-     * 
-     * @return docID the new docID assigned to the new document -1 if the
-     *         document is already indexed in the _documentList
-     * 
-     */
-    private int registerNewDocument(String docName) {
-	int docID;
-	if (!_documentList.contains(docName)) {
-	    // The docName is not found in the _documentList
-	    // add the docName into the documentList and return its new index
-	    _documentList.add(docName);
-	    docID = _documentList.indexOf(docName);
-	} else {
-	    // The docName is already in the _documentList
-	    // return -1
-	    docID = -1;
-	}
-	return docID;
-    }
-
-    /**
-     * Update the vocabulary and its docID into the local posting <br/>
-     * 
-     * @param vocabularyID
-     * @param docID
-     */
-    private void updateToLocalPosting(int vocabularyID, int docID) {
-
-    }
-
-    private synchronized void updateDocumentList() {
-
-    }
-
-    private synchronized void updatePosting() {
-
-    }
-
 }

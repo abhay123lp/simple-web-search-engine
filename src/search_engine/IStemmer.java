@@ -5,8 +5,8 @@ package search_engine;
  * Provides stem () service <br/>
  * 
  * @author ngtrhieu0011
- *
+ * 
  */
 public interface IStemmer {
-	public String stem (String word);
+	public String stem(String word);
 }
