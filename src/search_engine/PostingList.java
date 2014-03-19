@@ -1,5 +1,6 @@
 package search_engine;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -17,6 +18,16 @@ class PostingList {
 	 */
 	public PostingList() {
 		_postingList = new ArrayList<Posting>();
+	}
+	
+	/**
+	 * Update the local Document List to file
+	 * 
+	 * @throws IOException when the file cannot be opened
+	 */
+	public synchronized void writeToFile() throws IOException {
+		// TODO: implementing method
+		
 	}
 
 	/**
@@ -66,12 +77,5 @@ class PostingList {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Update the local Document List to file
-	 */
-	public synchronized void writeToFile() {
-		// TODO: un-implement method
 	}
 }

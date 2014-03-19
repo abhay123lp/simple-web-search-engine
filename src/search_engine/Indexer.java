@@ -133,16 +133,12 @@ public class Indexer {
 		_dictionary = new Dictionary();
 		_documentList = new DocumentList();
 
-		// Fetch information from file
-		_documentList.fetchDictionary();
-		_dictionary.fetchDictionary();
-
 		// Index document
 		indexDocument();
 
 		// Update the local knowledge to file
-		_documentList.writeToFile();
-		_dictionary.writeToFile();
+		_documentList.close();
+		_dictionary.close();
 		_localPosting.writeToFile();
 	}
 
