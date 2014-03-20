@@ -48,7 +48,7 @@ import java.io.*;
  * @author http://tartarus.org/~martin/PorterStemmer/java.txt
  */
 
-class Stemmer implements IStemmer {
+public class Stemmer implements IStemmer {
 	private char[] b;
 	private int i, /* offset into b */
 	i_end, /* offset to end of stemmed word */
