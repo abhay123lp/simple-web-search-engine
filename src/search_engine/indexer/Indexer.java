@@ -1,4 +1,4 @@
-package search_engine;
+package search_engine.indexer;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import opennlp.tools.tokenize.WhitespaceTokenizer;
+import search_engine.common.Stemmer;
+import search_engine.common.StopwordFilter;
 
 /**
  * This class provide index service to index a single document to the database

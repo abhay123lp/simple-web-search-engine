@@ -1,4 +1,4 @@
-package search_engine;
+package search_engine.indexer;
 
 import java.util.ArrayList;
 

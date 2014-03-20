@@ -1,4 +1,4 @@
-package search_engine;
+package search_engine.indexer;
 
 /**
  * This class provides an implementation of a tuple {@code<docId, tf>} in which

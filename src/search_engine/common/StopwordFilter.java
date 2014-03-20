@@ -1,4 +1,4 @@
-package search_engine;
+package search_engine.common;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
