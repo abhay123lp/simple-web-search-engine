@@ -191,6 +191,7 @@ class Dictionary {
 		String nextLine = null;
 		do {
 			nextLine = br.readLine();
+			// TODO: using constructor to parse to vocabulary
 			Vocabulary newVocabulary = parseToVocabulary(nextLine);
 			if (newVocabulary != null) {
 				_dictionary.add(newVocabulary);
@@ -216,9 +217,8 @@ class Dictionary {
 		BufferedWriter bw = new BufferedWriter(osw);
 
 		// Write each vocabulary to each line of the file.
-		for (int vocabularyId = 0; vocabularyId < _dictionary.size(); vocabularyId++) {
-			Vocabulary vocabulary = getVocabulary(vocabularyId);
-			bw.write(vocabulary.word() + " " + vocabulary.df() + "/n");
+		for (Vocabulary vocabulary : _dictionary) {
+			bw.write (vocabulary.toString() + "\n");
 		}
 
 		// Close stream writers_isInitialzed

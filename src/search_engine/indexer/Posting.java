@@ -12,6 +12,8 @@ import java.util.ArrayList;
  * 
  */
 class Posting implements Comparable<Posting> {
+	private final String DELIMITOR = " ";
+	
 	private int _vocabularyId;
 	private ArrayList<PostTuple> _posting;
 
@@ -24,6 +26,30 @@ class Posting implements Comparable<Posting> {
 	public Posting(int vocabularyId) {
 		_vocabularyId = vocabularyId;
 		_posting = new ArrayList<PostTuple>();
+	}
+
+	/**
+	 * Protected Constructor <br/>
+	 * This is called by the Posting List to translate the Posting stored as
+	 * String in file to an actual Posting object <br/>
+	 * 
+	 * @param vocabularyId
+	 *            the vocabularyId of the Posting. This is denoted as the line
+	 *            number in the file
+	 * @param postingString
+	 *            the raw string from the file
+	 */
+	protected Posting(int vocabularyId, String postingString) {
+		// Initialise the new empty Posting and assign the vocabularyId
+		_vocabularyId = vocabularyId;
+		_posting = new ArrayList<PostTuple>();
+
+		// Translate the postingString
+		String[] tokens = postingString.split(DELIMITOR);
+		for (String token : tokens) {
+			PostTuple newTuple = new PostTuple(token);
+			_posting.add(newTuple);
+		}
 	}
 
 	/**
@@ -82,5 +108,21 @@ class Posting implements Comparable<Posting> {
 	 */
 	public int compareTo(Posting target) {
 		return _vocabularyId - target.getVocabularyId();
+	}
+
+	/**
+	 * Translate the current Posting into String that can be stored into file <br/>
+	 */
+	public String toString() {
+		// Empty postingString
+		String postingString = "";
+		
+		for (PostTuple tuple : _posting) {
+			postingString += tuple.toString() + DELIMITOR;
+		}
+		
+		postingString.trim();
+		
+		return postingString;
 	}
 }

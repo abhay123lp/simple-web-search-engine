@@ -9,6 +9,7 @@ package search_engine.indexer;
  * 
  */
 class PostTuple implements Comparable<PostTuple> {
+	private final String DELIMITOR = ",";
 	private int _docId;
 	private int _tf;
 
@@ -22,6 +23,35 @@ class PostTuple implements Comparable<PostTuple> {
 	public PostTuple(int docId) {
 		_docId = docId;
 		_tf = 1;
+	}
+
+	/**
+	 * Protected Constructor <br/>
+	 * This is called by the Posting to attempt read and construct postings from
+	 * file <br/>
+	 * 
+	 * <b>Note</b> that the tupleString must have the format: <br/>
+	 * 
+	 * <pre>
+	 * df,tf
+	 * </pre>
+	 * 
+	 * where df and tf are parse-able integer numbers in string format. Fail is
+	 * assumption and the program will crash <br/>
+	 * 
+	 * @param tupleString
+	 *            the raw String from the file
+	 */
+	protected PostTuple(String tupleString) {
+		String[] tokens = tupleString.split(DELIMITOR);
+		try {
+			_docId = Integer.parseInt(tokens[0]);
+			_tf = Integer.parseInt(tokens[1]);
+		} catch (NumberFormatException e) {
+			// This assert will be false when the format of tupleString is not
+			// standard
+			assert false;
+		}
 	}
 
 	/**
@@ -54,5 +84,12 @@ class PostTuple implements Comparable<PostTuple> {
 	 */
 	public int compareTo(PostTuple target) {
 		return _docId - target.getDocId();
+	}
+
+	/**
+	 * Translate the current PostTuple into String that can be stored into file <br/>
+	 */
+	public String toString() {
+		return _docId + DELIMITOR + _tf;
 	}
 }

@@ -10,6 +10,8 @@ package search_engine.indexer;
  * @author ngtrhieu0011
  */
 class Vocabulary implements Comparable<Vocabulary> {
+	private final String DELIMITOR = " ";
+	
 	private String _word;
 	private int _df;
 
@@ -66,5 +68,12 @@ class Vocabulary implements Comparable<Vocabulary> {
 	 */
 	public void increaseDocFreq() {
 		_df++;
+	}
+	
+/**
+ * Translate the current Vocabulary into String that can be stored into file <br/>
+ */
+	public String toString () {
+		return _word + DELIMITOR + _df;
 	}
 }
