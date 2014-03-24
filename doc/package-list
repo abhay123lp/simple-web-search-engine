@@ -1,3 +1,4 @@
 search_engine.common
+search_engine.crawler
 search_engine.indexer
 search_engine.searcher
