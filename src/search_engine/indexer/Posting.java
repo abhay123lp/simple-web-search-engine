@@ -13,7 +13,7 @@ import java.util.ArrayList;
  */
 class Posting implements Comparable<Posting> {
 	private final String DELIMITOR = " ";
-	
+
 	private int _vocabularyId;
 	private ArrayList<PostTuple> _posting;
 
@@ -116,13 +116,29 @@ class Posting implements Comparable<Posting> {
 	public String toString() {
 		// Empty postingString
 		String postingString = "";
-		
+
 		for (PostTuple tuple : _posting) {
 			postingString += tuple.toString() + DELIMITOR;
 		}
-		
+
 		postingString.trim();
-		
+
 		return postingString;
+	}
+
+	/**
+	 * Static Service <br/>
+	 * Merge two Postings together <br/>
+	 * The input Postings need to have the same vocabularyId <br/>
+	 * 
+	 * @param p1
+	 *            Posting 1
+	 * @param p2
+	 *            Posting 2
+	 * @return the merge posting, null if p1 and p2 have different vocabularyId
+	 */
+	public static Posting merge(Posting p1, Posting p2) {
+		// TODO unimplemented method
+		return null;
 	}
 }

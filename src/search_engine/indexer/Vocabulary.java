@@ -14,6 +14,31 @@ class Vocabulary implements Comparable<Vocabulary> {
 	
 	private String _word;
 	private int _df;
+	
+	/**
+	 * Static Helper - Constructor <br/>
+	 * Parse a line from dictionary file into a Vocabulary <br/>
+	 * Extract both the word (1st token) and df (2nd token) to create a new
+	 * Vocabulary <br/>
+	 * 
+	 * @param line
+	 *            from dictionary
+	 * @return <b>Vocabulary</b> the parsed Vocabulary <br/>
+	 *         <b>null</b> if the <b>line</b> is syntactically incorrect
+	 */
+	public static Vocabulary parseToVocabulary(String line) {
+		Vocabulary vocabulary = null;
+		try {
+			String[] tokens = line.split(" ");
+			String word = tokens[0];
+			int df = Integer.parseInt(tokens[1]);
+			vocabulary = new Vocabulary(word, df);
+		} catch (Exception e) {
+			// Catch Parsing Error
+			vocabulary = null;
+		}
+		return vocabulary;
+	}
 
 	/**
 	 * Create a new Vocabulary <br/>
