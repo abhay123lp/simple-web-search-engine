@@ -1,6 +1,7 @@
 package search_engine.indexer;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Posting provides a local posting, which will contains a list of document ID
@@ -11,7 +12,7 @@ import java.util.ArrayList;
  * @author ngtrhieu0011
  * 
  */
-class Posting implements Comparable<Posting> {
+class Posting implements Comparable<Posting>, Iterator<PostTuple> {
 	private final String DELIMITOR = " ";
 
 	private int _vocabularyId;
@@ -104,6 +105,31 @@ class Posting implements Comparable<Posting> {
 	}
 
 	/**
+	 * Add a tuple into the posting <br/>
+	 * If there is another posting with the same vocabularyId, the duplicate
+	 * posting will be replaced <br/>
+	 * 
+	 * @param tuple
+	 *            to be added
+	 * 
+	 */
+	public void add(PostTuple tuple) {
+		for (PostTuple t : _posting) {
+			if (t.getDocId() == tuple.getDocId()) {
+				int index = _posting.indexOf(t);
+				_posting.remove(index);
+				_posting.add(index,tuple);
+				return;
+			}
+			if (t.getDocId() < tuple.getDocId()) {
+				int index = _posting.indexOf(t);
+				_posting.add(index, tuple);
+				return;
+			}
+		}
+	}
+
+	/**
 	 * Comparison method
 	 */
 	public int compareTo(Posting target) {
@@ -127,6 +153,37 @@ class Posting implements Comparable<Posting> {
 	}
 
 	/**
+	 * Returns true if the iteration has more elements. (In other words, returns
+	 * true if next() would return an element rather than throwing an
+	 * exception.) <br/>
+	 * 
+	 * @return true if the iteration has more elements
+	 */
+	public boolean hasNext() {
+		return _posting.iterator().hasNext();
+	}
+
+	/**
+	 * Returns the next PostTuple in the postingList <br/>
+	 * 
+	 * @return the next PostTuple in the iteration or a dummy PostTuple with an
+	 *         infinity docId when there are no more PostTuple in the list
+	 */
+	public PostTuple next() {
+		if (hasNext()) {
+			return _posting.iterator().next();
+		} else {
+			return new PostTuple(999999);
+		}
+	}
+
+	/**
+	 * Unsupported Method
+	 */
+	public void remove() {
+	}
+
+	/**
 	 * Static Service <br/>
 	 * Merge two Postings together <br/>
 	 * The input Postings need to have the same vocabularyId <br/>
@@ -137,8 +194,30 @@ class Posting implements Comparable<Posting> {
 	 *            Posting 2
 	 * @return the merge posting, null if p1 and p2 have different vocabularyId
 	 */
-	public static Posting merge(Posting p1, Posting p2) {
-		// TODO unimplemented method
-		return null;
+	protected static Posting merge(Posting p1, Posting p2) {
+		if (p1.getVocabularyId() == p2.getVocabularyId()) {
+			Posting mergedPosting = new Posting(p1.getVocabularyId());
+			PostTuple tuple1 = p1.next();
+			PostTuple tuple2 = p2.next();
+
+			while (p1.hasNext() || p2.hasNext()) {
+				if (tuple1.getDocId() > tuple2.getDocId()) {
+					mergedPosting.add(tuple2);
+					tuple2 = p2.next();
+				} else if (tuple1.getDocId() < tuple2.getDocId()) {
+					mergedPosting.add(tuple1);
+					tuple1 = p1.next();
+				} else if (tuple1.getDocId() == tuple2.getDocId()) {
+					PostTuple mergedTuple = PostTuple.merge (tuple1, tuple2);
+					mergedPosting.add(mergedTuple);
+					tuple1 = p1.next();
+					tuple2 = p2.next();
+				}
+			}
+
+			return mergedPosting;
+		} else {
+			return null;
+		}
 	}
 }

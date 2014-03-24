@@ -42,7 +42,7 @@ class PostingList {
 		PostingList postingListOnFile = readFromFile();
 
 		// Merge with the current postingList
-		postingListOnFile.merge(this);
+		postingListOnFile.mergeWith(this);
 
 		// Write postingList to file
 		writeToFile(postingListOnFile);
@@ -103,8 +103,8 @@ class PostingList {
 	 * @param postingList
 	 *            to be merged with
 	 */
-	private void merge(PostingList postingList) {
-		// TODO Auto-generated method stub
+	private void mergeWith(PostingList postingList) {
+		// TODO: unimplemented method
 	}
 
 	/**

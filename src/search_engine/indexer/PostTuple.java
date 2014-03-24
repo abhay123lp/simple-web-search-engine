@@ -26,6 +26,18 @@ class PostTuple implements Comparable<PostTuple> {
 	}
 
 	/**
+	 * Constructor <br/>
+	 * Construct a new tuplet with docId and tf given <br/>
+	 * 
+	 * @param docId
+	 * @param tf
+	 */
+	public PostTuple(int docId, int tf) {
+		_docId = docId;
+		_tf = tf;
+	}
+
+	/**
 	 * Protected Constructor <br/>
 	 * This is called by the Posting to attempt read and construct postings from
 	 * file <br/>
@@ -91,5 +103,19 @@ class PostTuple implements Comparable<PostTuple> {
 	 */
 	public String toString() {
 		return _docId + DELIMITOR + _tf;
+	}
+
+	/**
+	 * Merge 2 tuples <br/>
+	 * The tuples need to have the same docId <br/>
+	 * @param tuple1
+	 * @param tuple2
+	 * @return merged tuple or null if 2 tuples are not having the same docId
+	 */
+	protected static PostTuple merge(PostTuple tuple1, PostTuple tuple2) {
+		if (tuple1.getDocId() == tuple2.getDocId()) {
+			return new PostTuple (tuple1.getDocId(), tuple1.getTf() + tuple2.getTf());
+		}
+		return null;
 	}
 }
