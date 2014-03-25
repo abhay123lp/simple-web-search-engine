@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * This class provides implementation of a PostingList and services related to
@@ -15,7 +16,7 @@ import java.util.ArrayList;
  * 
  * @author ngtrhieu0011
  */
-class PostingList {
+class PostingList implements Iterator<Posting> {
 	private final static String POSTING_LIST_FILE = "postings.txt";
 	private ArrayList<Posting> _postingList;
 
@@ -98,28 +99,73 @@ class PostingList {
 	}
 
 	/**
+	 * Return true if there is more Posting in the PostingList, otherwise return
+	 * false
+	 * 
+	 * @return true of there is more Posting
+	 */
+	public boolean hasNext() {
+		return _postingList.iterator().hasNext();
+	}
+
+	/**
+	 * Return the next Posting in the list, null if there is no more
+	 * 
+	 * @return next Posting, null if hasNext() = false
+	 */
+	public Posting next() {
+		if (hasNext()) {
+			return _postingList.iterator().next();
+		} else {
+			return null;
+		}
+
+	}
+
+	/**
+	 * Unsupported method
+	 */
+	public void remove() {
+	}
+
+	/**
 	 * Merge its own postingList with another postingList <br/>
 	 * 
 	 * @param postingList
 	 *            to be merged with
 	 */
 	private void mergeWith(PostingList postingList) {
-		// TODO: unimplemented method
+		while (postingList.hasNext()) {
+			Posting targetPosting = postingList.next();
+			int vocabId = targetPosting.getVocabularyId();
+			
+			Posting posting = getPosting(vocabId);
+			
+			if (posting != null) {
+				Posting mergedPosting = Posting.merge(posting, targetPosting);
+				add (mergedPosting);
+			} else {
+				add (targetPosting);
+			}
+		}
 	}
 
 	/**
 	 * Add a Posting into the postingList <br/>
+	 * If there is another Posting with the same vocabularyId, that Posting will
+	 * be replaced <br/>
 	 * 
 	 * @param posting
 	 *            to be added
-	 * @throws IllegalArgumentException
-	 *             when the Posting has already existed in the list. Consider
-	 *             using merge() instead
+	 * 
 	 */
 	private void add(Posting posting) throws IllegalArgumentException {
 		for (Posting p : _postingList) {
 			if (p.getVocabularyId() == posting.getVocabularyId()) {
-				throw new IllegalArgumentException ("Posting with the same VocabularyId existed");
+				int index = _postingList.indexOf(p);
+				_postingList.remove(index);
+				_postingList.add(index, posting);
+				break;
 			}
 			if (p.getVocabularyId() < posting.getVocabularyId()) {
 				int index = _postingList.indexOf(p);
@@ -176,10 +222,12 @@ class PostingList {
 	 * 
 	 * @param postingList
 	 *            to be written to file
-	 *            
-	 * @throws IOException when the file cannot be opened
+	 * 
+	 * @throws IOException
+	 *             when the file cannot be opened
 	 */
-	private synchronized void writeToFile(PostingList postingList) throws IOException {
+	private synchronized void writeToFile(PostingList postingList)
+			throws IOException {
 		// Initialise the Stream writers
 		FileOutputStream fos = new FileOutputStream(POSTING_LIST_FILE, false);
 		OutputStreamWriter osw = new OutputStreamWriter(fos);
