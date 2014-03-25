@@ -28,17 +28,21 @@ import org.jsoup.select.Elements;
 public class WebCrawlerThread extends WebCrawler {
 	private final long CRAWLING_IO_ERROR = -1;
 	private final long CRAWLING_TIMEOUT_ERROR = -2;
-	private final long CRAWLING_TIMEOUT = 5000; // in miliseconds
-	private final int DEFAULT_PORT_NUMBER_USED = 80; // port number for web
-														// server
-	private final int CRAWLING_RATE = 500; // in miliseconds, delay between 2
-											// consecutive crawling
+	private final long CRAWLING_TIMEOUT = 5000; // in milliseconds
+
+	// Port number for web server
+	private final int DEFAULT_PORT_NUMBER_USED = 80;
+
+	// Delay between 2 consecutive crawling, in milliseconds
+	private final int CRAWLING_RATE = 500;
+	// Used to extract redirect links
 	private final String LOCATION_FIELD = "LOCATION:";
 
 	private String startingURL;
 	private Document pageContent;
 	private ArrayList<String> headerContent;
 	private int depth, maxDepth, portNumber;
+	private Socket httpSocket;
 
 	/**
 	 * Partial constructor: assume depth is 0, portNumber is default
@@ -117,8 +121,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 */
 	private long LoadPageAndGetResponseTime(String link) {
 		try {
-			// Set up Reader for the URL
-			Socket httpSocket = new Socket(startingURL, portNumber);
+			httpSocket = new Socket(startingURL, portNumber);
 			PrintWriter writer = new PrintWriter(httpSocket.getOutputStream(),
 					true);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -142,13 +145,9 @@ public class WebCrawlerThread extends WebCrawler {
 			do {
 				newLine = reader.readLine(); // read each line in
 				if (responseTime == -1) {
-					responseTime = System.currentTimeMillis(); // response time
-																// is taken when
-																// the first few
-																// bytes are
-																// available in
-																// the reader
-																// stream
+					// Response time taken when the first few bytes are
+					// available in the reader stream
+					responseTime = System.currentTimeMillis();
 				}
 
 				if ((newLine != null) && (newLine.compareTo("") == 0)) {
@@ -266,9 +265,7 @@ public class WebCrawlerThread extends WebCrawler {
 		} catch (URISyntaxException e) {
 			return "";
 		}
-		String domain = uri.getHost(); // Get the domain part
-		String domainName = domain == null ? "" : domain; // if null then return
-															// empty string
-		return domainName;
+		
+		return uri.getHost() + uri.getRawPath();
 	}
 }

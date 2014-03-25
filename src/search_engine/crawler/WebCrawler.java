@@ -54,13 +54,11 @@ public class WebCrawler extends TimerTask {
 	protected static synchronized void ReportCrawlResult(String link,
 			long responseTime) {
 		try {
-			FileWriter fstream = new FileWriter(reportFileName, true); // true =
-																		// open
-																		// to
-																		// append
+			// true = open to append
+			FileWriter fstream = new FileWriter(reportFileName, true);
 			BufferedWriter bufferedWriter = new BufferedWriter(fstream);
 			bufferedWriter.write("Crawl to " + link + "\nResponse Time: "
-					+ responseTime + "\n"); // writeln to the file
+					+ responseTime + "\n");
 			bufferedWriter.close();
 			fstream.close();
 		} catch (IOException e) {
@@ -85,10 +83,14 @@ public class WebCrawler extends TimerTask {
 	}
 
 	/**
-	 * Entry point of the program
+	 * Entry point of the program <br/>
+	 * 
+	 * Syntax: output_file maximum_dept [set_of_starting_urls]<br/>
+	 * 
+	 * i.e: output.txt 4 www.comp.nus.edu.sg www.google.com <br/>
 	 * 
 	 * @param args
-	 *            : First argument will be the name of the output file Second
+	 *            First argument will be the name of the output file. Second
 	 *            argument will be the maximum depth the crawlers can reach
 	 *            Others will be set of valid starting domains E.g: output.txt 4
 	 *            www.comp.nus.edu.sg www.google.com www.facebook.com
@@ -116,7 +118,8 @@ public class WebCrawler extends TimerTask {
 		}
 	}
 
-	@Override
-	public void run() {
-	}
+	/**
+	 * Unsupported method
+	 */
+	public void run() {	}
 }
