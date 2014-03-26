@@ -17,10 +17,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
- * This is a single web crawler thread that will crawl a single domain for its
- * responsiveness, plus retrieve all the domains in the response's content and
- * send more crawlers in if possible (if the domain is unvisited and the max
- * depth is not yet reached)
+ * This is a single web crawler thread that will crawl a page for content to
+ * index and send more crawlers in if possible (if the next page is unvisited
+ * and the max depth is not yet reached)
  * 
  * @author ngtrhieu0011
  */
@@ -265,7 +264,7 @@ public class WebCrawlerThread extends WebCrawler {
 		} catch (URISyntaxException e) {
 			return "";
 		}
-		
+
 		return uri.getHost() + uri.getRawPath();
 	}
 }

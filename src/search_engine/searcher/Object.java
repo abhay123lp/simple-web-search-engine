@@ -3,14 +3,16 @@ package search_engine.searcher;
 /**
  * This class is used to store objects we use in Relevant class
  * 
+ * Similar to the Vocabulary
+ * 
  * @author Ludvig Kratz
  */
-class DataStructure {
+class Object {
 	private String name;
 	private int Id;
 	private double score;
 
-	public DataStructure(String u, int di, double s) {
+	public Object(String u, int di, double s) {
 		name = u;
 		Id = di;
 		score = s;
