@@ -1,7 +1,5 @@
 package search_engine.unit_test;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import search_engine.indexer.Indexer;
 
