@@ -1,7 +1,6 @@
 package search_engine.indexer;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * Posting provides a local posting, which will contains a list of document ID
@@ -12,7 +11,7 @@ import java.util.Iterator;
  * @author ngtrhieu0011
  * 
  */
-class Posting implements Comparable<Posting>, Iterator<PostTuple> {
+class Posting implements Comparable<Posting> {
 	private final String DELIMITOR = " ";
 
 	private int _vocabularyId;
@@ -54,6 +53,23 @@ class Posting implements Comparable<Posting>, Iterator<PostTuple> {
 	}
 
 	/**
+	 * Get a PostTuple based on its index
+	 * 
+	 * @param index
+	 *            of the Tuple
+	 * 
+	 * @return the PostTuple with the specified index. PostTuple.NULL_TUPLE if IndexOutOfBound exception is thrown
+	 */
+	public PostTuple getTupleAtIndex(int index) {
+		if (index < _posting.size()) {
+			return _posting.get(index);
+		} else {
+			return PostTuple.NULL_TUPLE;
+		}
+
+	}
+
+	/**
 	 * Get the vocabulary id of this posting
 	 * 
 	 * @return vocabularyId
@@ -81,24 +97,31 @@ class Posting implements Comparable<Posting>, Iterator<PostTuple> {
 	public void addDocId(int docId) {
 		// Assume that the posting list is always sorted
 
-		// If the last item is smaller than docId: append the docId to the list
-		PostTuple lastTuple = _posting.get(_posting.size() - 1);
-		if (lastTuple.getDocId() < docId) {
+		if (_posting.size() == 0) {
 			_posting.add(new PostTuple(docId));
-		} else if (lastTuple.getDocId() == docId) {
-			lastTuple.increaseTf();
 		} else {
-			// Scan the posting list and find the place to insert
-			for (int i = 0; i < _posting.size() - 1; i++) {
-				PostTuple preTuple = _posting.get(i);
-				PostTuple nextTuple = _posting.get(i + 1);
-				if (preTuple.getDocId() == docId) {
-					preTuple.increaseTf();
-					return; // already exist, quit
-				}
-				if (preTuple.getDocId() < docId && docId < nextTuple.getDocId()) {
-					_posting.add(i, new PostTuple(docId)); // insert and quit
-					return;
+			// If the last item is smaller than docId: append the docId to the
+			// list
+			PostTuple lastTuple = _posting.get(_posting.size() - 1);
+			if (lastTuple.getDocId() < docId) {
+				_posting.add(new PostTuple(docId));
+			} else if (lastTuple.getDocId() == docId) {
+				lastTuple.increaseTf();
+			} else {
+				// Scan the posting list and find the place to insert
+				for (int i = 0; i < _posting.size() - 1; i++) {
+					PostTuple preTuple = _posting.get(i);
+					PostTuple nextTuple = _posting.get(i + 1);
+					if (preTuple.getDocId() == docId) {
+						preTuple.increaseTf();
+						return; // already exist, quit
+					}
+					if (preTuple.getDocId() < docId
+							&& docId < nextTuple.getDocId()) {
+						_posting.add(i, new PostTuple(docId)); // insert and
+																// quit
+						return;
+					}
 				}
 			}
 		}
@@ -114,18 +137,23 @@ class Posting implements Comparable<Posting>, Iterator<PostTuple> {
 	 * 
 	 */
 	public void add(PostTuple tuple) {
-		for (PostTuple t : _posting) {
-			if (t.getDocId() == tuple.getDocId()) {
-				int index = _posting.indexOf(t);
-				_posting.remove(index);
-				_posting.add(index,tuple);
-				return;
+		if (_posting.size() == 0) {
+			_posting.add(tuple);
+		} else {
+			for (PostTuple t : _posting) {
+				if (t.compareTo(tuple) == 0) {
+					int index = _posting.indexOf(t);
+					_posting.remove(index);
+					_posting.add(index, tuple);
+					return;
+				}
+				if (t.compareTo(tuple) > 0) {
+					int index = _posting.indexOf(t);
+					_posting.add(index, tuple);
+					return;
+				}
 			}
-			if (t.getDocId() < tuple.getDocId()) {
-				int index = _posting.indexOf(t);
-				_posting.add(index, tuple);
-				return;
-			}
+			_posting.add(tuple);
 		}
 	}
 
@@ -153,37 +181,6 @@ class Posting implements Comparable<Posting>, Iterator<PostTuple> {
 	}
 
 	/**
-	 * Returns true if the iteration has more elements. (In other words, returns
-	 * true if next() would return an element rather than throwing an
-	 * exception.) <br/>
-	 * 
-	 * @return true if the iteration has more elements
-	 */
-	public boolean hasNext() {
-		return _posting.iterator().hasNext();
-	}
-
-	/**
-	 * Returns the next PostTuple in the postingList <br/>
-	 * 
-	 * @return the next PostTuple in the iteration or a dummy PostTuple with an
-	 *         infinity docId when there are no more PostTuple in the list
-	 */
-	public PostTuple next() {
-		if (hasNext()) {
-			return _posting.iterator().next();
-		} else {
-			return new PostTuple(999999);
-		}
-	}
-
-	/**
-	 * Unsupported Method
-	 */
-	public void remove() {
-	}
-
-	/**
 	 * Static Service <br/>
 	 * Merge two Postings together <br/>
 	 * The input Postings need to have the same vocabularyId <br/>
@@ -197,21 +194,28 @@ class Posting implements Comparable<Posting>, Iterator<PostTuple> {
 	protected static Posting merge(Posting p1, Posting p2) {
 		if (p1.getVocabularyId() == p2.getVocabularyId()) {
 			Posting mergedPosting = new Posting(p1.getVocabularyId());
-			PostTuple tuple1 = p1.next();
-			PostTuple tuple2 = p2.next();
+			int p1_index = 0, p2_index = 0;
+			PostTuple tuple1 = p1.getTupleAtIndex(p1_index);
+			PostTuple tuple2 = p2.getTupleAtIndex(p2_index);
+			p1_index++;
+			p2_index++;
 
-			while (p1.hasNext() || p2.hasNext()) {
-				if (tuple1.getDocId() > tuple2.getDocId()) {
+			while (tuple1.compareTo(PostTuple.NULL_TUPLE) != 0 || tuple2.compareTo(PostTuple.NULL_TUPLE) != 0) {
+				if (tuple1.compareTo(tuple2) > 0) {
 					mergedPosting.add(tuple2);
-					tuple2 = p2.next();
-				} else if (tuple1.getDocId() < tuple2.getDocId()) {
+					tuple2 = p2.getTupleAtIndex(p2_index);
+					p2_index++;
+				} else if (tuple1.compareTo(tuple2) < 0) {
 					mergedPosting.add(tuple1);
-					tuple1 = p1.next();
-				} else if (tuple1.getDocId() == tuple2.getDocId()) {
-					PostTuple mergedTuple = PostTuple.merge (tuple1, tuple2);
+					tuple1 = p1.getTupleAtIndex(p1_index);
+					p1_index++;
+				} else if (tuple1.compareTo(tuple2) == 0) {
+					PostTuple mergedTuple = PostTuple.merge(tuple1, tuple2);
 					mergedPosting.add(mergedTuple);
-					tuple1 = p1.next();
-					tuple2 = p2.next();
+					tuple1 = p1.getTupleAtIndex(p1_index);
+					p1_index++;
+					tuple2 = p2.getTupleAtIndex(p2_index);
+					p2_index++;
 				}
 			}
 

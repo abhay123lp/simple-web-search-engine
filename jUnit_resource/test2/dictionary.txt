@@ -1,0 +1,7 @@
+thi 3
+simpl 2
+text 2
+exampl 2
+ye 3
+anoth 1
+file 1

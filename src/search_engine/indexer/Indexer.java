@@ -1,12 +1,6 @@
 package search_engine.indexer;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import opennlp.tools.tokenize.WhitespaceTokenizer;
 import search_engine.common.Stemmer;
@@ -47,7 +41,7 @@ public class Indexer {
 	 * This private variable is use to store all the tokenized, stemmed words in
 	 * the original document sent to the Indexer <br/>
 	 */
-	private ArrayList<String> _indexDocument;
+	private String _indexDocument;
 
 	/**
 	 * The document list stores all the indexed document name (in this case, url
@@ -61,49 +55,6 @@ public class Indexer {
 	private PostingList _localPosting;
 
 	/**
-	 * Standard Constructor. <br/>
-	 * Pass the document to the Indexer as a file. <br/>
-	 * The indexer should only be noticed when the file is ready to use. <br/>
-	 * 
-	 * @param docName
-	 *            specifies the name of the document. In the search engine, this
-	 *            should be the link to the website.<br/>
-	 * @param fileName
-	 *            specifies the name of the file storing the document. This file
-	 *            should be able to open by the Indexer.<br/>
-	 * @throws IOException
-	 *             when the file cannot be opened or some IO errors happened
-	 *             when reading the file
-	 */
-	public Indexer(String docName, String fileName) throws IOException {
-		// Save the docName into local field
-		_docName = docName;
-
-		// Initialise the Stream readers
-		FileInputStream fis = new FileInputStream(fileName);
-		InputStreamReader isr = new InputStreamReader(fis);
-		BufferedReader br = new BufferedReader(isr);
-
-		// Initialise empty document
-		_indexDocument = new ArrayList<String>();
-
-		// Read from stream line by line and store into local document
-		String nextLine = null;
-
-		do {
-			nextLine = br.readLine();
-			if (nextLine != null) {
-				_indexDocument.add(nextLine);
-			}
-		} while (nextLine != null);
-
-		// Close all the stream reader
-		br.close();
-		isr.close();
-		fis.close();
-	}
-
-	/**
 	 * Recommended Constructor <br/>
 	 * This constructor is safer to use, thus recommended. <br/>
 	 * Pass the document to the Indexer as a List of String. <br/>
@@ -115,10 +66,10 @@ public class Indexer {
 	 *            the List of String, each String represents a line in the
 	 *            document. <br/>
 	 */
-	public Indexer(String docName, List<String> document) {
+	public Indexer(String docName, String document) {
 		// Save the references into local fields
 		_docName = docName;
-		_indexDocument = (ArrayList<String>) document;
+		_indexDocument = document;
 	}
 
 	/**
@@ -127,7 +78,7 @@ public class Indexer {
 	 * start indexing documents <br/>
 	 * 
 	 * @throws IOException
-	 *             when IO error occurs
+	 *             when cannot open the database
 	 */
 	public void start() throws IOException {
 		// Initialise localPosting, dictionary and documentList
@@ -168,20 +119,19 @@ public class Indexer {
 				return;
 			}
 
-			// Index each word in the document
-			for (String line : _indexDocument) {
-				// Tokenize
-				String[] tokens = tokenizer.tokenize(line);
-				for (String token : tokens) {
-					// Stem
-					token = stemmer.stem(token);
-					// Filter stop-word
-					if (!filter.isStopword(token)) {
-						int vocabularyId = _dictionary.checkAndAddWord(token);
-						Posting posting = _localPosting
-								.addAndGetPosting(vocabularyId);
-						posting.addDocId(docId);
-					}
+			// Tokenize
+			String[] tokens = tokenizer.tokenize(_indexDocument);
+			for (String token : tokens) {
+				// Lowercase and remove all non-alphabet character
+				token = token.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+				// Stem
+				token = stemmer.stem(token);
+				// Filter stop-word
+				if (!filter.isStopword(token)) {
+					int vocabularyId = _dictionary.checkAndAddWord(token);
+					Posting posting = _localPosting
+							.addAndGetPosting(vocabularyId);
+					posting.addDocId(docId);
 				}
 			}
 		}

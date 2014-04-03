@@ -16,6 +16,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import search_engine.indexer.Indexer;
+
 /**
  * This is a single web crawler thread that will crawl a page for content to
  * index and send more crawlers in if possible (if the next page is unvisited
@@ -201,6 +203,15 @@ public class WebCrawlerThread extends WebCrawler {
 			Element link = links.get(i);
 			String linkHref = link.attr("href"); // retrieve the href field
 			SendCrawlerIntoLink(linkHref);
+		}
+		
+		String text = pageContent.body().text();
+		
+		Indexer indexer = new Indexer(startingURL, text);
+		try {
+			indexer.start();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

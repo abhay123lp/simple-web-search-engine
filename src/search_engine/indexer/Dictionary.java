@@ -126,7 +126,7 @@ class Dictionary {
 			// Find the similar vocabulary in the Dictionary
 			// If found the increase the df of that word and return its index
 			for (Vocabulary vocabulary : _dictionary) {
-				if (vocabulary.equals(newVocabulary)) {
+				if (vocabulary.compareTo(newVocabulary) == 0) {
 					vocabularyId = _dictionary.indexOf(vocabulary);
 					vocabulary.increaseDocFreq();
 					break;

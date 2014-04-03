@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * This class provides implementation of a PostingList and services related to
@@ -16,7 +15,7 @@ import java.util.Iterator;
  * 
  * @author ngtrhieu0011
  */
-class PostingList implements Iterator<Posting> {
+class PostingList {
 	private final static String POSTING_LIST_FILE = "postings.txt";
 	private ArrayList<Posting> _postingList;
 
@@ -99,33 +98,20 @@ class PostingList implements Iterator<Posting> {
 	}
 
 	/**
-	 * Return true if there is more Posting in the PostingList, otherwise return
-	 * false
+	 * Get a Posting based on its index
 	 * 
-	 * @return true of there is more Posting
-	 */
-	public boolean hasNext() {
-		return _postingList.iterator().hasNext();
-	}
-
-	/**
-	 * Return the next Posting in the list, null if there is no more
+	 * @param index
+	 *            of the Posting
 	 * 
-	 * @return next Posting, null if hasNext() = false
+	 * @return the Posting with the specified index. Null if IndexOutOfBound
+	 *         exception is thrown
 	 */
-	public Posting next() {
-		if (hasNext()) {
-			return _postingList.iterator().next();
+	public Posting getPostingAtIndex(int index) {
+		if (index < _postingList.size()) {
+			return _postingList.get(index);
 		} else {
 			return null;
 		}
-
-	}
-
-	/**
-	 * Unsupported method
-	 */
-	public void remove() {
 	}
 
 	/**
@@ -135,17 +121,23 @@ class PostingList implements Iterator<Posting> {
 	 *            to be merged with
 	 */
 	private void mergeWith(PostingList postingList) {
-		while (postingList.hasNext()) {
-			Posting targetPosting = postingList.next();
+		int i = 0;
+		while (true) {
+			Posting targetPosting = postingList.getPostingAtIndex(i);
+			i++;
+			if (targetPosting == null) {
+				break;
+			}
+			
 			int vocabId = targetPosting.getVocabularyId();
-			
+
 			Posting posting = getPosting(vocabId);
-			
+
 			if (posting != null) {
 				Posting mergedPosting = Posting.merge(posting, targetPosting);
-				add (mergedPosting);
+				add(mergedPosting);
 			} else {
-				add (targetPosting);
+				add(targetPosting);
 			}
 		}
 	}
@@ -160,18 +152,23 @@ class PostingList implements Iterator<Posting> {
 	 * 
 	 */
 	private void add(Posting posting) throws IllegalArgumentException {
-		for (Posting p : _postingList) {
-			if (p.getVocabularyId() == posting.getVocabularyId()) {
-				int index = _postingList.indexOf(p);
-				_postingList.remove(index);
-				_postingList.add(index, posting);
-				break;
+		if (_postingList.size() > 0) {
+			for (Posting p : _postingList) {
+				if (p.compareTo(posting) == 0 ) {
+					int index = _postingList.indexOf(p);
+					_postingList.remove(index);
+					_postingList.add(index, posting);
+					return;
+				}
+				if (p.compareTo(posting) > 0) {
+					int index = _postingList.indexOf(p);
+					_postingList.add(index, posting);
+					return;
+				}
 			}
-			if (p.getVocabularyId() < posting.getVocabularyId()) {
-				int index = _postingList.indexOf(p);
-				_postingList.add(index, posting);
-				break;
-			}
+			_postingList.add(posting);
+		} else {
+			_postingList.add(posting);
 		}
 	}
 
@@ -197,12 +194,14 @@ class PostingList implements Iterator<Posting> {
 		int i = 0;
 		do {
 			nextLine = br.readLine();
-			Posting newPosting = new Posting(i, nextLine);
-			if (newPosting != null) {
-				try {
-					postingList.add(newPosting);
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
+			if (nextLine != null) {
+				Posting newPosting = new Posting(i, nextLine);
+				if (newPosting != null) {
+					try {
+						postingList.add(newPosting);
+					} catch (IllegalArgumentException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 
@@ -234,8 +233,10 @@ class PostingList implements Iterator<Posting> {
 		BufferedWriter bw = new BufferedWriter(osw);
 
 		// Write each vocabulary to each line of the file.
-		for (Posting posting : _postingList) {
-			bw.write(posting.toString() + "/n");
+		
+		for (int i=0; postingList.getPostingAtIndex(i) != null; i++) {
+			Posting posting = postingList.getPostingAtIndex(i);
+			bw.write(posting.toString() + "\n");
 		}
 
 		// Close stream writers_isInitialzed

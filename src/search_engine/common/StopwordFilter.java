@@ -26,7 +26,7 @@ import java.util.ArrayList;
  * 
  */
 public class StopwordFilter {
-	private final String DEFAULT_STOPWORD_FILE = "";
+	private final String DEFAULT_STOPWORD_FILE = "stopwords.txt";
 
 	private String _stopwordFile;
 	private IStemmer _stemmer;

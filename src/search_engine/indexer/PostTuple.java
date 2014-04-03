@@ -9,6 +9,7 @@ package search_engine.indexer;
  * 
  */
 class PostTuple implements Comparable<PostTuple> {
+	public static final PostTuple NULL_TUPLE = new PostTuple (-1, 999999);
 	private final String DELIMITOR = ",";
 	private int _docId;
 	private int _tf;
@@ -95,6 +96,15 @@ class PostTuple implements Comparable<PostTuple> {
 	 * Comparison method
 	 */
 	public int compareTo(PostTuple target) {
+		if (_docId == -1 && target.getDocId() == -1) {
+			return 0;
+		}
+		if (_docId == -1) {
+			return 1;
+		}
+		if (target.getDocId() == -1) {
+			return -1;
+		}
 		return _docId - target.getDocId();
 	}
 

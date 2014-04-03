@@ -79,7 +79,7 @@ class DocumentList {
 	public int addDocument(String docName) {
 		if (_isInitialzed) {
 			int docId = getDocId(docName);
-			if (docId != -1) {
+			if (docId == -1) {
 				_documentList.add(docName);
 				return _documentList.size() - 1;
 			}
@@ -164,7 +164,7 @@ class DocumentList {
 
 		// Write each document to each line of the file.
 		for (String docName : _documentList) {
-			bw.write(docName + "/n");
+			bw.write(docName + "\n");
 		}
 
 		// Close stream writers
