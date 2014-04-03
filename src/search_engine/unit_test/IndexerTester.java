@@ -104,7 +104,6 @@ public class IndexerTester {
 			if (line1 == null || line2 == null) {
 				System.out.println("Passed!");
 				return true;
-
 			} else {
 				System.out.println("These lines are not the same: ");
 				System.out.println(line1);
@@ -189,12 +188,40 @@ public class IndexerTester {
 			fail();
 		}
 	}
+	
+	@Test
+	public void cuccurentIndexDocument() {
+		int testId = 4;
+		
+		System.out.println(TESTING_CASE_NOTIFICATION + testId);
+		retrieveExpectedResult(testId);
+		
+		try {
+			initializeFiles();
+
+			ThreadIndexer indexer = new ThreadIndexer("www.dummy.com", "This is a simple text of my example! Yes this is an example");
+			ThreadIndexer indexer2 = new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes");
+			indexer.run();
+			indexer2.run();
+	
+			
+			assertTrue(contentEquals(expectedDocumentFile, documentFile));
+			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
+			assertTrue(contentEquals(expectedPostingsFile, postingsFile));
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
 
 	@Test
-	public void reinitializeFiles() {
+	public void reinitializeFiles() {		
 		try {
 			initializeFiles();
 			assertTrue (true);
+			
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail ();

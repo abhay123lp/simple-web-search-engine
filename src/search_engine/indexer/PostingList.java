@@ -38,12 +38,15 @@ class PostingList {
 	 *             when the file cannot be opened
 	 */
 	public synchronized void writeToFile() throws IOException {
+		System.out.println ("------ Reading Posting from file");
 		// Get postingList from file
 		PostingList postingListOnFile = readFromFile();
 
+		System.out.println ("------ Merge Posting");
 		// Merge with the current postingList
 		postingListOnFile.mergeWith(this);
 
+		System.out.println ("------ Writing Posting into file");
 		// Write postingList to file
 		writeToFile(postingListOnFile);
 	}

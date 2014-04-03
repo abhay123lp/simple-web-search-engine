@@ -96,6 +96,7 @@ class DocumentList {
 	 */
 	public int getDocId(String docName) {
 		if (_isInitialzed) {
+			// TODO: docName can be null sometime?
 			return _documentList.indexOf(docName);
 		} else {
 			return -1;

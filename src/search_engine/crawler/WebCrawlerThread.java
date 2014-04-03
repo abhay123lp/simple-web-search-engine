@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -29,7 +30,10 @@ import search_engine.indexer.Indexer;
 public class WebCrawlerThread extends WebCrawler {
 	private final long CRAWLING_IO_ERROR = -1;
 	private final long CRAWLING_TIMEOUT_ERROR = -2;
+	private final long SOCKET_TIMEOUT_ERROR = -3;
+	private final long HOST_ERROR = -4;
 	private final long CRAWLING_TIMEOUT = 5000; // in milliseconds
+	private final int SO_TIMEOUT = 500; // in milliseconds
 
 	// Port number for web server
 	private final int DEFAULT_PORT_NUMBER_USED = 80;
@@ -66,8 +70,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @param maxDepth
 	 * @param portNumber
 	 */
-	public WebCrawlerThread(String startingURL, int depth, int maxDepth,
-			int portNumber) {
+	public WebCrawlerThread(String startingURL, int depth, int maxDepth, int portNumber) {
 		this.startingURL = startingURL;
 		this.depth = depth;
 		this.maxDepth = maxDepth;
@@ -80,32 +83,28 @@ public class WebCrawlerThread extends WebCrawler {
 	 */
 	public void run() {
 		if (depth < maxDepth) {
+			System.out.println("Attempt to crawl " + startingURL);
 			// not reaching the maxDepth
 			// trying to load the page, time the response
-			long responseTime = LoadPageAndGetResponseTime(startingURL);
+			long responseTime = loadPageAndGetResponseTime(startingURL);
 
-			if (responseTime != CRAWLING_IO_ERROR
-					&& responseTime != CRAWLING_TIMEOUT_ERROR) {
+			if (responseTime != CRAWLING_IO_ERROR && responseTime != CRAWLING_TIMEOUT_ERROR) {
 				// No error: report crawl result
-				System.out.println("Attempt to crawl " + startingURL
-						+ "\nDepth: " + depth + "\nResponse Time: "
-						+ responseTime);
 				WebCrawler.ReportCrawlResult(startingURL, responseTime);
 
 				// Check for redirection and check crawlers in the redirected
 				// page
-				CheckRedirection(headerContent);
+				checkRedirection(headerContent);
 				// Try to crawl into the page
-				SendCrawlersInPage(pageContent);
+				sendCrawlersInPage(pageContent);
 			} else if (responseTime == CRAWLING_IO_ERROR) {
 				// IO Error: Report back
-				System.out.println("Attempt to crawl " + startingURL
-						+ "\nDepth: " + depth + "\nResponse Time: IO Error");
 			} else if (responseTime == CRAWLING_TIMEOUT_ERROR) {
 				// Timeout Error: Report back
-				System.out.println("Attempt to crawl " + startingURL
-						+ "\nDepth: " + depth
-						+ "\nResponse Time: Timeout Error");
+			} else if (responseTime == SOCKET_TIMEOUT_ERROR) {
+				// Timeout Error: Report back
+			} else if (responseTime == HOST_ERROR) {
+				// Timeout Error: Report back
 			}
 		}
 	}
@@ -120,13 +119,18 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @return the time taken to load the full page. INVALID_NUMBER is returned
 	 *         if an error occured
 	 */
-	private long LoadPageAndGetResponseTime(String link) {
+	private long loadPageAndGetResponseTime(String link) {
 		try {
-			httpSocket = new Socket(startingURL, portNumber);
-			PrintWriter writer = new PrintWriter(httpSocket.getOutputStream(),
-					true);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					httpSocket.getInputStream()));
+			String hostName = getHostName(startingURL);
+
+			try {
+				httpSocket = new Socket(hostName, portNumber);
+			} catch (Exception e) {
+				return HOST_ERROR;
+			}
+			httpSocket.setSoTimeout(SO_TIMEOUT);
+			PrintWriter writer = new PrintWriter(httpSocket.getOutputStream(), true);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(httpSocket.getInputStream()));
 
 			// Send HTTP Get Request
 			writer.println("GET / HTTP/1.1\r");
@@ -172,8 +176,7 @@ public class WebCrawlerThread extends WebCrawler {
 
 				// consider fixing problem when server "forget" to close the
 				// input stream
-			} while (newLine != null
-					&& !newLine.toLowerCase().endsWith("</html>"));
+			} while (newLine != null && !newLine.toLowerCase().endsWith("</html>"));
 
 			reader.close();
 
@@ -181,10 +184,13 @@ public class WebCrawlerThread extends WebCrawler {
 			pageContent = (Document) Jsoup.parse(htmlString);
 
 			return responseTime - startingTime;
+		} catch (SocketTimeoutException e1) {
+			// Socket timeout: readLine() has been blocked for SO_TIMEOUT milliseconds
+			return SOCKET_TIMEOUT_ERROR;
 		} catch (IOException e) {
 			// Error when set up input stream and reader
 			return CRAWLING_IO_ERROR;
-		}
+		} 
 	}
 
 	/**
@@ -194,7 +200,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @param pageContent
 	 *            : the HTML Document of the page
 	 */
-	private void SendCrawlersInPage(Document pageContent) {
+	private void sendCrawlersInPage(Document pageContent) {
 		Elements links = pageContent.getElementsByTag("a"); // Get list of a
 															// tags
 
@@ -202,11 +208,11 @@ public class WebCrawlerThread extends WebCrawler {
 		for (int i = 0; i < links.size(); i++) {
 			Element link = links.get(i);
 			String linkHref = link.attr("href"); // retrieve the href field
-			SendCrawlerIntoLink(linkHref);
+			sendCrawlerIntoLink(linkHref);
 		}
-		
+
 		String text = pageContent.body().text();
-		
+
 		Indexer indexer = new Indexer(startingURL, text);
 		try {
 			indexer.start();
@@ -221,7 +227,8 @@ public class WebCrawlerThread extends WebCrawler {
 	 * 
 	 * @param headerContent
 	 */
-	private void CheckRedirection(List<String> headerContent) {
+	private void checkRedirection(List<String> headerContent) {
+		// TODO: firstHeaderLine may be null sometime ?
 		String firstHeaderLine = headerContent.get(0);
 		String[] firstHeaderLineSplit = firstHeaderLine.split(" ");
 		int httpCode = Integer.parseInt(firstHeaderLineSplit[1]);
@@ -231,7 +238,7 @@ public class WebCrawlerThread extends WebCrawler {
 				String[] headerLineSplit = headerLine.split(" ");
 				if (headerLineSplit[0].equalsIgnoreCase(LOCATION_FIELD)) {
 					String redirectedURL = headerLineSplit[1];
-					SendCrawlerIntoLink(redirectedURL);
+					sendCrawlerIntoLink(redirectedURL);
 				}
 			}
 		}
@@ -243,8 +250,8 @@ public class WebCrawlerThread extends WebCrawler {
 	 * 
 	 * @param link
 	 */
-	private void SendCrawlerIntoLink(String link) {
-		link = ReparseLink(link);
+	private void sendCrawlerIntoLink(String link) {
+		link = reparseLink(link);
 		if (WebCrawler.CheckAndAddLink(link)) { // check whether the link has
 												// been crawled
 			if (depth < maxDepth - 1) {
@@ -253,11 +260,31 @@ public class WebCrawlerThread extends WebCrawler {
 				// false = not Daemon: the application will wait until the
 				// children crawlers finish before terminating
 				Timer crawlingTimer = new Timer("crawlingTimer", false);
-				crawlingTimer.schedule(new WebCrawlerThread(link, depth + 1,
-						maxDepth, DEFAULT_PORT_NUMBER_USED), CRAWLING_RATE);
+				crawlingTimer.schedule(new WebCrawlerThread(link, depth + 1, maxDepth, DEFAULT_PORT_NUMBER_USED), CRAWLING_RATE);
 			}
 		}
 
+	}
+
+	/**
+	 * Get the Host Name from an URL
+	 * 
+	 * @param link
+	 * @return the host name of the URL
+	 */
+	private String getHostName(String link) {
+		if(!link.startsWith("http") && !link.startsWith("https")){
+	         link = "http://" + link;
+	    }
+		
+		URI uri;
+		try {
+			uri = new URI(link);
+		} catch (URISyntaxException e) {
+			return "";
+		}
+
+		return uri.getHost();
 	}
 
 	/**
@@ -268,7 +295,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 *            : the raw link
 	 * @return the formated link
 	 */
-	private String ReparseLink(String link) {
+	private String reparseLink(String link) {
 		URI uri;
 		try {
 			uri = new URI(link);
