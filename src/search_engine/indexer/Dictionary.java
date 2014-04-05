@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
-
 /**
  * <b> Singleton class </b><br/>
  * <br/>
@@ -27,10 +26,10 @@ class Dictionary {
 	private final String DICTONARY_FILENAME = "dictionary.txt";
 
 	// Singleton dictionary
-	private static ArrayList<Vocabulary> _dictionary = null;
+	private static ArrayList<Vocabulary> _dictionary = new ArrayList<Vocabulary>();
 	private static int _no_instances = 0;
 
-	private boolean _isInitialzed = false;
+	private boolean _isInitialized = false;
 
 	public Dictionary() throws IOException {
 		start();
@@ -44,11 +43,11 @@ class Dictionary {
 	 *             when the file cannot be opened
 	 */
 	public void start() throws IOException {
-		if (_no_instances == 0) {
+		_no_instances++;
+		if (_no_instances == 1) {
 			fetchDictionary();
 		}
-		_no_instances++;
-		_isInitialzed = true;
+		_isInitialized = true;
 	}
 
 	/**
@@ -59,12 +58,13 @@ class Dictionary {
 	 * 
 	 */
 	public void close() throws IOException {
-		_no_instances--;
-		if (_no_instances == 0) {
-			writeToFile();
-			_dictionary = null;
+		synchronized (_dictionary) {
+			_no_instances--;
+			if (_no_instances == 0) {
+				writeToFile();
+			}
+			_isInitialized = false;
 		}
-		_isInitialzed = false;
 	}
 
 	/**
@@ -78,12 +78,14 @@ class Dictionary {
 	 *         closed <br/>
 	 */
 	public int getVocabularyId(String word) {
-		if (_isInitialzed) {
+		if (_isInitialized) {
 			Vocabulary target = new Vocabulary(word);
-			for (int i = 0; i < _dictionary.size(); i++) {
-				Vocabulary vocabulary = _dictionary.get(i);
-				if (vocabulary.compareTo(target) == 0) {
-					return i;
+			synchronized (_dictionary) {
+				for (int i = 0; i < _dictionary.size(); i++) {
+					Vocabulary vocabulary = _dictionary.get(i);
+					if (vocabulary.compareTo(target) == 0) {
+						return i;
+					}
 				}
 			}
 		}
@@ -98,9 +100,11 @@ class Dictionary {
 	 *         initialised/has been closed <br/>
 	 */
 	public Vocabulary getVocabulary(int vocabularyId) {
-		if (_isInitialzed) {
-			if (vocabularyId < _dictionary.size()) {
-				return _dictionary.get(vocabularyId);
+		if (_isInitialized) {
+			synchronized (_dictionary) {
+				if (vocabularyId < _dictionary.size()) {
+					return _dictionary.get(vocabularyId);
+				}
 			}
 		}
 		return null;
@@ -117,7 +121,7 @@ class Dictionary {
 	 *         hasn't initialised/has been closed <br/>
 	 */
 	public int checkAndAddWord(String token) {
-		if (_isInitialzed) {
+		if (_isInitialized) {
 			// Create a new temporary vocabulary
 			Vocabulary newVocabulary = new Vocabulary(token);
 
@@ -125,20 +129,21 @@ class Dictionary {
 
 			// Find the similar vocabulary in the Dictionary
 			// If found the increase the df of that word and return its index
-			for (Vocabulary vocabulary : _dictionary) {
-				if (vocabulary.compareTo(newVocabulary) == 0) {
-					vocabularyId = _dictionary.indexOf(vocabulary);
-					vocabulary.increaseDocFreq();
-					break;
+			synchronized (_dictionary) {
+				for (Vocabulary vocabulary : _dictionary) {
+					if (vocabulary.compareTo(newVocabulary) == 0) {
+						vocabularyId = _dictionary.indexOf(vocabulary);
+						vocabulary.increaseDocFreq();
+						break;
+					}
 				}
-			}
-
-			// Cannot be found: add newVocaburary into the dictionary and return
-			// its
-			// index
-			if (vocabularyId == -1) {
-				_dictionary.add(newVocabulary);
-				vocabularyId = _dictionary.indexOf(newVocabulary);
+	
+				// Cannot be found: add newVocaburary into the dictionary and return
+				// its index
+				if (vocabularyId == -1) {
+					_dictionary.add(newVocabulary);
+					vocabularyId = _dictionary.indexOf(newVocabulary);
+				}
 			}
 
 			return vocabularyId;
@@ -193,10 +198,10 @@ class Dictionary {
 
 		// Write each vocabulary to each line of the file.
 		for (Vocabulary vocabulary : _dictionary) {
-			bw.write (vocabulary.toString() + "\n");
+			bw.write(vocabulary.toString() + "\n");
 		}
 
-		// Close stream writers_isInitialzed
+		// Close stream writers
 		bw.close();
 		osw.close();
 		fos.close();

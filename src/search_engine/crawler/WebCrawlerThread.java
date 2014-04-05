@@ -222,7 +222,7 @@ public class WebCrawlerThread extends WebCrawler {
 	}
 
 	/**
-	 * Check the header for redirection If recieve a 3xx, get the link from
+	 * Check the header for redirection If receive a 3xx, get the link from
 	 * LOCATION field and follow that link
 	 * 
 	 * @param headerContent

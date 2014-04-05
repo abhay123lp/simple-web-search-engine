@@ -28,7 +28,7 @@ class DocumentList {
 	private final String DOCUMENT_FILENAME = "documents.txt";
 
 	// Singleton
-	private LinkedList<String> _documentList;
+	private static LinkedList<String> _documentList = new LinkedList<String>();
 	private static int _no_instances = 0;
 
 	private boolean _isInitialzed = false;
@@ -45,10 +45,12 @@ class DocumentList {
 	 *             when the file cannot be opened
 	 */
 	public void start() throws IOException {
-		if (_no_instances == 0) {
-			fetchDocumentList();
+		synchronized (_documentList) {
+			_no_instances++;
+			if (_no_instances == 1) {
+				fetchDocumentList();
+			}
 		}
-		_no_instances++;
 		_isInitialzed = true;
 	}
 
@@ -63,7 +65,6 @@ class DocumentList {
 		_no_instances--;
 		if (_no_instances == 0) {
 			writeToFile();
-			_documentList = null;
 		}
 		_isInitialzed = false;
 	}
@@ -80,8 +81,10 @@ class DocumentList {
 		if (_isInitialzed) {
 			int docId = getDocId(docName);
 			if (docId == -1) {
-				_documentList.add(docName);
-				return _documentList.size() - 1;
+				synchronized (_documentList) {
+					_documentList.add(docName);
+					return _documentList.size() - 1;
+				}
 			}
 		}
 		return -1;
@@ -96,8 +99,9 @@ class DocumentList {
 	 */
 	public int getDocId(String docName) {
 		if (_isInitialzed) {
-			// TODO: docName can be null sometime?
-			return _documentList.indexOf(docName);
+			synchronized (_documentList) {
+				return _documentList.indexOf(docName);
+			}
 		} else {
 			return -1;
 		}
@@ -112,7 +116,9 @@ class DocumentList {
 	public String getDocName(int docId) {
 		if (_isInitialzed) {
 			try {
-				return _documentList.get(docId);
+				synchronized (_documentList) {
+					return _documentList.get(docId);
+				}
 			} catch (Exception e) {
 				return null;
 			}
@@ -133,17 +139,19 @@ class DocumentList {
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
 
-		// Initialise empty dictionary
-		_documentList = new LinkedList<String>();
-
-		// Fetch data from file into local dictionary
-		String nextLine = null;
-		do {
-			nextLine = br.readLine();
-			if (nextLine != null) {
-				_documentList.add(nextLine);
-			}
-		} while (nextLine != null);
+		synchronized (_documentList) {
+			// Initialise empty dictionary
+			_documentList = new LinkedList<String>();
+	
+			// Fetch data from file into local dictionary
+			String nextLine = null;
+			do {
+				nextLine = br.readLine();
+				if (nextLine != null) {
+					_documentList.add(nextLine);
+				}
+			} while (nextLine != null);
+		}
 
 		// Close stream readers
 		br.close();
@@ -164,8 +172,10 @@ class DocumentList {
 		BufferedWriter bw = new BufferedWriter(osw);
 
 		// Write each document to each line of the file.
-		for (String docName : _documentList) {
-			bw.write(docName + "\n");
+		synchronized (_documentList) {
+			for (String docName : _documentList) {
+				bw.write(docName + "\n");
+			}
 		}
 
 		// Close stream writers

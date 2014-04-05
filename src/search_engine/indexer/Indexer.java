@@ -84,24 +84,17 @@ public class Indexer {
 		System.out.println ("Indexing document " + _docName);
 		
 		// Initialise localPosting, dictionary and documentList
-		System.out.println ("---Reading Posting List");
 		_localPosting = new PostingList();
-		System.out.println ("---Reading Dictionary");
 		_dictionary = new Dictionary();
-		System.out.println ("---Reading Documents");
 		_documentList = new DocumentList();
 
 		// Index document
 		indexDocument();
 
 		// Update the local knowledge to file
-		System.out.println ("---Writing Documents");
 		_documentList.close();
-		System.out.println ("---Writing Dictionary");
 		_dictionary.close();
-		System.out.println ("---Writing Posting List");
 		_localPosting.writeToFile();
-		System.out.println ("Indexing Done");
 	}
 
 	/**
