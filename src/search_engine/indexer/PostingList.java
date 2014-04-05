@@ -17,6 +17,7 @@ import java.util.ArrayList;
  */
 class PostingList {
 	private final static String POSTING_LIST_FILE = "postings.txt";
+	private static Object fileLock = new Object();
 	private ArrayList<Posting> _postingList;
 
 	/**
@@ -37,15 +38,17 @@ class PostingList {
 	 * @throws IOException
 	 *             when the file cannot be opened
 	 */
-	public synchronized void writeToFile() throws IOException {
-		// Get postingList from file
-		PostingList postingListOnFile = readFromFile();
+	public void writeToFile() throws IOException {
+		synchronized (fileLock) {
+			// Get postingList from file
+			PostingList postingListOnFile = readFromFile();
 
-		// Merge with the current postingList
-		postingListOnFile.mergeWith(this);
+			// Merge with the current postingList
+			postingListOnFile.mergeWith(this);
 
-		// Write postingList to file
-		writeToFile(postingListOnFile);
+			// Write postingList to file
+			writeToFile(postingListOnFile);
+		}
 	}
 
 	/**
@@ -128,7 +131,7 @@ class PostingList {
 			if (targetPosting == null) {
 				break;
 			}
-			
+
 			int vocabId = targetPosting.getVocabularyId();
 
 			Posting posting = getPosting(vocabId);
@@ -154,7 +157,7 @@ class PostingList {
 	private void add(Posting posting) throws IllegalArgumentException {
 		if (_postingList.size() > 0) {
 			for (Posting p : _postingList) {
-				if (p.compareTo(posting) == 0 ) {
+				if (p.compareTo(posting) == 0) {
 					int index = _postingList.indexOf(p);
 					_postingList.remove(index);
 					_postingList.add(index, posting);
@@ -181,39 +184,41 @@ class PostingList {
 	 *             when the file cannot be opened
 	 */
 	private static PostingList readFromFile() throws IOException {
-		// Initialise the Stream readers
-		FileInputStream fis = new FileInputStream(POSTING_LIST_FILE);
-		InputStreamReader isr = new InputStreamReader(fis);
-		BufferedReader br = new BufferedReader(isr);
+		synchronized (fileLock) {
+			// Initialise the Stream readers
+			FileInputStream fis = new FileInputStream(POSTING_LIST_FILE);
+			InputStreamReader isr = new InputStreamReader(fis);
+			BufferedReader br = new BufferedReader(isr);
 
-		// Initialise an empty PostingList
-		PostingList postingList = new PostingList();
+			// Initialise an empty PostingList
+			PostingList postingList = new PostingList();
 
-		// Fetch data from file into local dictionary
-		String nextLine = null;
-		int i = 0;
-		do {
-			nextLine = br.readLine();
-			if (nextLine != null) {
-				Posting newPosting = new Posting(i, nextLine);
-				if (newPosting != null) {
-					try {
-						postingList.add(newPosting);
-					} catch (IllegalArgumentException e) {
-						e.printStackTrace();
+			// Fetch data from file into local dictionary
+			String nextLine = null;
+			int i = 0;
+			do {
+				nextLine = br.readLine();
+				if (nextLine != null) {
+					Posting newPosting = new Posting(i, nextLine);
+					if (newPosting != null) {
+						try {
+							postingList.add(newPosting);
+						} catch (IllegalArgumentException e) {
+							e.printStackTrace();
+						}
 					}
 				}
-			}
 
-			i++;
-		} while (nextLine != null);
+				i++;
+			} while (nextLine != null);
 
-		// Close stream readers
-		br.close();
-		isr.close();
-		fis.close();
+			// Close stream readers
+			br.close();
+			isr.close();
+			fis.close();
 
-		return postingList;
+			return postingList;
+		}
 	}
 
 	/**
@@ -225,23 +230,24 @@ class PostingList {
 	 * @throws IOException
 	 *             when the file cannot be opened
 	 */
-	private synchronized void writeToFile(PostingList postingList)
-			throws IOException {
-		// Initialise the Stream writers
-		FileOutputStream fos = new FileOutputStream(POSTING_LIST_FILE, false);
-		OutputStreamWriter osw = new OutputStreamWriter(fos);
-		BufferedWriter bw = new BufferedWriter(osw);
+	private void writeToFile(PostingList postingList) throws IOException {
+		synchronized (fileLock) {
+			// Initialise the Stream writers
+			FileOutputStream fos = new FileOutputStream(POSTING_LIST_FILE, false);
+			OutputStreamWriter osw = new OutputStreamWriter(fos);
+			BufferedWriter bw = new BufferedWriter(osw);
 
-		// Write each vocabulary to each line of the file.
-		
-		for (int i=0; postingList.getPostingAtIndex(i) != null; i++) {
-			Posting posting = postingList.getPostingAtIndex(i);
-			bw.write(posting.toString() + "\n");
+			// Write each vocabulary to each line of the file.
+
+			for (int i = 0; postingList.getPostingAtIndex(i) != null; i++) {
+				Posting posting = postingList.getPostingAtIndex(i);
+				bw.write(posting.toString() + "\n");
+			}
+
+			// Close stream writers_isInitialzed
+			bw.close();
+			osw.close();
+			fos.close();
 		}
-
-		// Close stream writers_isInitialzed
-		bw.close();
-		osw.close();
-		fos.close();
 	}
 }

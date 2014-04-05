@@ -9,7 +9,6 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 
@@ -273,7 +272,6 @@ public class WebCrawlerThread extends WebCrawler {
 				crawlingTimer.schedule(new WebCrawlerThread(link, depth + 1, maxDepth, DEFAULT_PORT_NUMBER_USED), CRAWLING_RATE);
 			}
 		}
-
 	}
 
 	/**

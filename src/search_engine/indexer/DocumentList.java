@@ -133,7 +133,7 @@ class DocumentList {
 	 * @throws IOEcxeption
 	 *             when the file cannot be opened
 	 */
-	private synchronized void fetchDocumentList() throws IOException {
+	private void fetchDocumentList() throws IOException {
 		// Initialise the Stream readers
 		FileInputStream fis = new FileInputStream(DOCUMENT_FILENAME);
 		InputStreamReader isr = new InputStreamReader(fis);
@@ -165,7 +165,7 @@ class DocumentList {
 	 * @throws IOException
 	 *             when the file cannot be opened
 	 */
-	private synchronized void writeToFile() throws IOException {
+	private void writeToFile() throws IOException {
 		// Initialise the Stream writers
 		FileOutputStream fos = new FileOutputStream(DOCUMENT_FILENAME, false);
 		OutputStreamWriter osw = new OutputStreamWriter(fos);

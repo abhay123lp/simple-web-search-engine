@@ -1,6 +1,8 @@
 package search_engine.unit_test;
 
 import java.io.IOException;
+import java.util.TimerTask;
+
 import search_engine.indexer.Indexer;
 
 /**
@@ -9,7 +11,7 @@ import search_engine.indexer.Indexer;
  * @author ngtrhieu0011
  * 
  */
-class ThreadIndexer extends Thread {
+class ThreadIndexer extends TimerTask {
 	private String _docName, _docContent;
 
 	ThreadIndexer(String docName, String docContent) {

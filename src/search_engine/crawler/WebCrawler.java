@@ -51,14 +51,12 @@ public class WebCrawler extends TimerTask {
 	 * @param responseTime
 	 *            : response time of the crawled domain
 	 */
-	protected static synchronized void ReportCrawlResult(String link,
-			long responseTime) {
+	protected static synchronized void ReportCrawlResult(String link, long responseTime) {
 		try {
 			// true = open to append
 			FileWriter fstream = new FileWriter(reportFileName, true);
 			BufferedWriter bufferedWriter = new BufferedWriter(fstream);
-			bufferedWriter.write("Crawl to " + link + "\nResponse Time: "
-					+ responseTime + "\n");
+			bufferedWriter.write("Crawl to " + link + "\nResponse Time: " + responseTime + "\n");
 			bufferedWriter.close();
 			fstream.close();
 		} catch (IOException e) {
@@ -111,8 +109,7 @@ public class WebCrawler extends TimerTask {
 		// send crawlers to respective domain
 		for (int i = 2; i < args.length; i++) {
 			if (WebCrawler.CheckAndAddLink(args[i])) {
-				WebCrawlerThread thread = new WebCrawlerThread(args[i],
-						maxDepth);
+				WebCrawlerThread thread = new WebCrawlerThread(args[i], maxDepth);
 				thread.run();
 			}
 		}
@@ -121,5 +118,6 @@ public class WebCrawler extends TimerTask {
 	/**
 	 * Unsupported method
 	 */
-	public void run() {	}
+	public void run() {
+	}
 }

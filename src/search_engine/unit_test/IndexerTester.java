@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Timer;
 
 import org.junit.Test;
 
@@ -101,7 +102,7 @@ public class IndexerTester {
 			fis1.close();
 			fis2.close();
 
-			if (line1 == null || line2 == null) {
+			if (line1 == null && line2 == null) {
 				System.out.println("Passed!");
 				return true;
 			} else {
@@ -116,7 +117,7 @@ public class IndexerTester {
 		}
 	}
 
-	//Test
+	// Test
 	public void indexOneDocument() {
 		int testId = 1;
 
@@ -139,7 +140,7 @@ public class IndexerTester {
 		}
 	}
 
-	//@Test
+	// @Test
 	public void indexTwoSimpleDocuments() {
 		int testId = 2;
 
@@ -164,7 +165,7 @@ public class IndexerTester {
 		}
 	}
 
-	//@Test
+	// @Test
 	public void indexDuplicateDocuments() {
 		int testId = 3;
 
@@ -188,14 +189,14 @@ public class IndexerTester {
 			fail();
 		}
 	}
-	
-	//@Test
-	public void cuccurentIndexDocument() {
+
+	// @Test
+	public void concurentIndexDocument() {
 		int testId = 4;
-		
+
 		System.out.println(TESTING_CASE_NOTIFICATION + testId);
 		retrieveExpectedResult(testId);
-		
+
 		try {
 			initializeFiles();
 
@@ -203,8 +204,7 @@ public class IndexerTester {
 			ThreadIndexer indexer2 = new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes");
 			indexer.run();
 			indexer2.run();
-	
-			
+
 			assertTrue(contentEquals(expectedDocumentFile, documentFile));
 			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
 			assertTrue(contentEquals(expectedPostingsFile, postingsFile));
@@ -214,34 +214,25 @@ public class IndexerTester {
 			fail();
 		}
 	}
-	
+
 	@Test
-	public void AdvanceCuccurentIndexDocument() {
-		// Test manually
-		//int testId = 4;
-		
-		//System.out.println(TESTING_CASE_NOTIFICATION + testId);
-		//retrieveExpectedResult(testId);
-		
+	public void delayConccurentIndexDocument() {
+		int testId = 5;
+
+		System.out.println(TESTING_CASE_NOTIFICATION + testId);
+		retrieveExpectedResult(testId);
+
 		try {
 			initializeFiles();
 
-			ThreadIndexer indexer = new ThreadIndexer("www.dummy.com", "This is a simple text of my example! Yes this is an example");
-			ThreadIndexer indexer2 = new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes");
-			indexer.run();
-			indexer2.run();
+			Timer indexTimer = new Timer("index1", false);
+			Timer index2Timer = new Timer("index2", false);
+			Timer index3Timer = new Timer("index3", false);
+			indexTimer.schedule(new ThreadIndexer("Delay www.dummy.com", "This is a simple text of my example! Yes this is an example"), 10);
+			index2Timer.schedule(new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes"), 10);
+			index3Timer.schedule(new ThreadIndexer("www.example.com", "Yes another text"), 10);
 			
-			for (int i=0; i<50000;i++){}
-			
-			ThreadIndexer indexer3 = new ThreadIndexer("www.example.com", "Yes another test");
-			indexer3.run();
-			
-			//TODO: Indexer behaves incorrectly in calculating df
-	
-			
-			/*assertTrue(contentEquals(expectedDocumentFile, documentFile));
-			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
-			assertTrue(contentEquals(expectedPostingsFile, postingsFile));*/
+			System.out.println ("Manually test");
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -249,16 +240,15 @@ public class IndexerTester {
 		}
 	}
 
-	//@Test
-	public void reinitializeFiles() {		
+	// @Test
+	public void reinitializeFiles() {
 		try {
 			initializeFiles();
-			assertTrue (true);
-			
-			
+			assertTrue(true);
+
 		} catch (IOException e) {
 			e.printStackTrace();
-			fail ();
+			fail();
 		}
 	}
 }

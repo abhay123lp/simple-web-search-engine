@@ -108,6 +108,8 @@ public class Indexer {
 		_documentList.close();
 		_dictionary.close();
 		_localPosting.writeToFile();
+		
+		System.out.println("Done indexing document " + _docName);
 	}
 
 	/**
