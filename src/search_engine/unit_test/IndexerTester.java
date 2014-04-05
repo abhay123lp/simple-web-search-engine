@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Timer;
 
 import org.junit.Test;
@@ -21,6 +23,9 @@ import search_engine.indexer.Indexer;
  * 
  */
 public class IndexerTester {
+	public static int no_threads = 0;
+	public static Object lock = new Object();
+
 	private final String TESTING_CASE_NOTIFICATION = "\n\nTesting test case: ";
 	private final String TEST_CASE_DIRECTORY = "jUnit_resource/test%d/";
 	private final String DOCUMENT_FILE = "documents.txt";
@@ -117,7 +122,87 @@ public class IndexerTester {
 		}
 	}
 
-	// Test
+	/**
+	 * Loosely compare 2 files <br/>
+	 * The files are loosely equal when they are <br/>
+	 * 1. Having the same number of lines and <br/>
+	 * 2. The lines are the same but not in order <br/>
+	 * That means 2 files that are equal will be loosely equal, but not vise
+	 * versa <br/>
+	 * However, after reorder the lines from one file in two loosely equal
+	 * files, we can get 2 files to be equal <br/>
+	 * 
+	 * @param file1
+	 * @param file2
+	 * 
+	 * @return true if the files are loosely equal, false when they are not or
+	 *         exceptions thrown when opening the files
+	 */
+	private boolean contentLooselyEquals(File file1, File file2) {
+		System.out.println("Loosy comparing :" + file1 + " with " + file2);
+
+		try {
+			ArrayList<String> content1 = readContentFromFile(file1);
+			ArrayList<String> content2 = readContentFromFile(file2);
+
+			if (content1.size() != content2.size()) {
+				System.out.println("Numbers of lines in each file are different");
+				return false;
+			}
+
+			Collections.sort(content1);
+			Collections.sort(content2);
+
+			for (int i = 0; i < content1.size(); i++) {
+				String line1 = content1.get(i);
+				String line2 = content2.get(i);
+
+				if (line1.compareTo(line2) != 0) {
+					System.out.println("One of these lines does not exist in the other file:");
+					System.out.println(line1);
+					System.out.println(line2);
+					return false;
+				}
+			}
+
+			System.out.println("Pass");
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	/**
+	 * Read the content from file into ArrayList <br/>
+	 * Each line is corresponding to an String in ArrayList <br/>
+	 * 
+	 * @param file
+	 *            to be read
+	 * @return an ArrayList containing every lines in the file
+	 * @throws IOException
+	 *             when cannot open file
+	 */
+	private ArrayList<String> readContentFromFile(File file) throws IOException {
+		FileInputStream fis = new FileInputStream(file);
+		InputStreamReader isr = new InputStreamReader(fis);
+		BufferedReader br = new BufferedReader(isr);
+
+		ArrayList<String> fileContent = new ArrayList<String>();
+		String line;
+		do {
+			line = br.readLine();
+			if (line == null) {
+				break;
+			}
+			fileContent.add(line);
+
+		} while (line != null);
+
+		return fileContent;
+	}
+
+	@Test
 	public void indexOneDocument() {
 		int testId = 1;
 
@@ -134,13 +219,14 @@ public class IndexerTester {
 			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
 			assertTrue(contentEquals(expectedPostingsFile, postingsFile));
 
+			initializeFiles();
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail();
 		}
 	}
 
-	// @Test
+	@Test
 	public void indexTwoSimpleDocuments() {
 		int testId = 2;
 
@@ -159,13 +245,14 @@ public class IndexerTester {
 			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
 			assertTrue(contentEquals(expectedPostingsFile, postingsFile));
 
+			initializeFiles();
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail();
 		}
 	}
 
-	// @Test
+	@Test
 	public void indexDuplicateDocuments() {
 		int testId = 3;
 
@@ -184,13 +271,14 @@ public class IndexerTester {
 			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
 			assertTrue(contentEquals(expectedPostingsFile, postingsFile));
 
+			initializeFiles();
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail();
 		}
 	}
 
-	// @Test
+	@Test
 	public void concurentIndexDocument() {
 		int testId = 4;
 
@@ -200,15 +288,22 @@ public class IndexerTester {
 		try {
 			initializeFiles();
 
+			no_threads = 2;
+
 			ThreadIndexer indexer = new ThreadIndexer("www.dummy.com", "This is a simple text of my example! Yes this is an example");
 			ThreadIndexer indexer2 = new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes");
 			indexer.run();
 			indexer2.run();
 
+			while (no_threads != 0) {
+				Thread.yield();
+			}
+
 			assertTrue(contentEquals(expectedDocumentFile, documentFile));
 			assertTrue(contentEquals(expectedDictionaryFile, dictionaryFile));
 			assertTrue(contentEquals(expectedPostingsFile, postingsFile));
 
+			initializeFiles();
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail();
@@ -225,26 +320,27 @@ public class IndexerTester {
 		try {
 			initializeFiles();
 
+			no_threads = 0;
+
 			Timer indexTimer = new Timer("index1", false);
 			Timer index2Timer = new Timer("index2", false);
 			Timer index3Timer = new Timer("index3", false);
+			no_threads = 3;
 			indexTimer.schedule(new ThreadIndexer("Delay www.dummy.com", "This is a simple text of my example! Yes this is an example"), 10);
 			index2Timer.schedule(new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes"), 10);
 			index3Timer.schedule(new ThreadIndexer("www.example.com", "Yes another text"), 10);
-			
-			System.out.println ("Manually test");
 
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail();
-		}
-	}
+			while (no_threads != 0) {
+				Thread.yield();
+			}
 
-	// @Test
-	public void reinitializeFiles() {
-		try {
+			assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
+			assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
+			// Cannot actually compare the postings
+			// assertTrue(contentLooselyEquals(expectedPostingsFile,
+			// postingsFile));
+
 			initializeFiles();
-			assertTrue(true);
 
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -23,6 +23,9 @@ class ThreadIndexer extends TimerTask {
 		try {
 			Indexer indexer = new Indexer(_docName, _docContent);
 			indexer.start();
+			synchronized (IndexerTester.lock) {
+				IndexerTester.no_threads --;
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
