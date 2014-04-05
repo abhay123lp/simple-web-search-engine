@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 
@@ -88,7 +89,8 @@ public class WebCrawlerThread extends WebCrawler {
 			// trying to load the page, time the response
 			long responseTime = loadPageAndGetResponseTime(startingURL);
 
-			if (responseTime != CRAWLING_IO_ERROR && responseTime != CRAWLING_TIMEOUT_ERROR) {
+			// if responseTime is not an error code
+			if (responseTime >= 0) {
 				// No error: report crawl result
 				WebCrawler.ReportCrawlResult(startingURL, responseTime);
 
@@ -149,6 +151,11 @@ public class WebCrawlerThread extends WebCrawler {
 
 			do {
 				newLine = reader.readLine(); // read each line in
+				
+				if (newLine == null) {
+					break;
+				}
+				
 				if (responseTime == -1) {
 					// Response time taken when the first few bytes are
 					// available in the reader stream
@@ -222,25 +229,28 @@ public class WebCrawlerThread extends WebCrawler {
 	}
 
 	/**
-	 * Check the header for redirection If receive a 3xx, get the link from
+	 * Check the header for redirection If recieve a 3xx, get the link from
 	 * LOCATION field and follow that link
 	 * 
 	 * @param headerContent
 	 */
 	private void checkRedirection(List<String> headerContent) {
-		// TODO: firstHeaderLine may be null sometime ?
-		String firstHeaderLine = headerContent.get(0);
-		String[] firstHeaderLineSplit = firstHeaderLine.split(" ");
-		int httpCode = Integer.parseInt(firstHeaderLineSplit[1]);
-
-		if (299 < httpCode && httpCode < 400) { // HTTP Code = 3xx
-			for (String headerLine : headerContent) {
-				String[] headerLineSplit = headerLine.split(" ");
-				if (headerLineSplit[0].equalsIgnoreCase(LOCATION_FIELD)) {
-					String redirectedURL = headerLineSplit[1];
-					sendCrawlerIntoLink(redirectedURL);
+		try {
+			String firstHeaderLine = headerContent.get(0);
+			String[] firstHeaderLineSplit = firstHeaderLine.split(" ");
+			int httpCode = Integer.parseInt(firstHeaderLineSplit[1]);
+		
+			if (299 < httpCode && httpCode < 400) { // HTTP Code = 3xx
+				for (String headerLine : headerContent) {
+					String[] headerLineSplit = headerLine.split(" ");
+					if (headerLineSplit[0].equalsIgnoreCase(LOCATION_FIELD)) {
+						String redirectedURL = headerLineSplit[1];
+						sendCrawlerIntoLink(redirectedURL);
+					}
 				}
 			}
+		} catch (Exception e) {
+			System.out.println ("Cannot read content header for page " + startingURL);
 		}
 	}
 
