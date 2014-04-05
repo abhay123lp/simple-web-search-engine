@@ -95,6 +95,16 @@ class Vocabulary implements Comparable<Vocabulary> {
 		_df++;
 	}
 	
+	/**
+	 * Increase Document Frequency by some amount <br/>
+	 * This is called when you register new document <br/>
+	 * 
+	 * @param amount
+	 */
+	public synchronized void increaseDocFreq(int amount) {
+		_df+=amount;
+	}
+	
 /**
  * Translate the current Vocabulary into String that can be stored into file <br/>
  */

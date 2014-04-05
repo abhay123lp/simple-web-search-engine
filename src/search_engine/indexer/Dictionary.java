@@ -111,10 +111,8 @@ class Dictionary {
 	}
 
 	/**
-	 * Check for the dictionary for the token <br/>
-	 * If the token exists in the dictionary, increase its df <br/>
-	 * Otherwise, create a new vocabulary and set the df to 1 <br/>
-	 * Return the vocabularyID of the token in the dictionary <br/>
+	 * Check for the dictionary for the token and return its vocabulary id <br/>
+	 * If the token does not exist, create a new vocabulary and set the df to 0 <br/>
 	 * 
 	 * @param token
 	 * @return vocabularyID, -1 if the vocabulary is not found or the Dictionary
@@ -123,7 +121,7 @@ class Dictionary {
 	public int checkAndAddWord(String token) {
 		if (_isInitialized) {
 			// Create a new temporary vocabulary
-			Vocabulary newVocabulary = new Vocabulary(token);
+			Vocabulary newVocabulary = new Vocabulary(token, 0);
 
 			int vocabularyId = -1;
 
@@ -133,12 +131,12 @@ class Dictionary {
 				for (Vocabulary vocabulary : _dictionary) {
 					if (vocabulary.compareTo(newVocabulary) == 0) {
 						vocabularyId = _dictionary.indexOf(vocabulary);
-						vocabulary.increaseDocFreq();
 						break;
 					}
 				}
-	
-				// Cannot be found: add newVocaburary into the dictionary and return
+
+				// Cannot be found: add newVocaburary into the dictionary and
+				// return
 				// its index
 				if (vocabularyId == -1) {
 					_dictionary.add(newVocabulary);
@@ -205,5 +203,20 @@ class Dictionary {
 		bw.close();
 		osw.close();
 		fos.close();
+	}
+
+	/**
+	 * Increase the df of a particular document
+	 * 
+	 * @param docId
+	 *            of the document
+	 */
+	public void increaseDocFreq(int docId) {
+		Vocabulary vocabulary = getVocabulary(docId);
+
+		if (vocabulary != null) {
+			vocabulary.increaseDocFreq();
+		}
+
 	}
 }

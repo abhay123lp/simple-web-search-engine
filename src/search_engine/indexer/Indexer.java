@@ -1,6 +1,7 @@
 package search_engine.indexer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import opennlp.tools.tokenize.WhitespaceTokenizer;
 import search_engine.common.Stemmer;
@@ -54,6 +55,18 @@ public class Indexer {
 	private Dictionary _dictionary;
 	private PostingList _localPosting;
 
+	protected class TokenWithId {
+		public int id;
+		public String token;
+
+		TokenWithId(int id, String token) {
+			this.id = id;
+			this.token = token;
+		}
+	}
+
+	private ArrayList<TokenWithId> localTokenList = new ArrayList<TokenWithId>();
+
 	/**
 	 * Recommended Constructor <br/>
 	 * This constructor is safer to use, thus recommended. <br/>
@@ -81,8 +94,8 @@ public class Indexer {
 	 *             when cannot open the database
 	 */
 	public void start() throws IOException {
-		System.out.println ("Indexing document " + _docName);
-		
+		System.out.println("Indexing document " + _docName);
+
 		// Initialise localPosting, dictionary and documentList
 		_localPosting = new PostingList();
 		_dictionary = new Dictionary();
@@ -123,6 +136,7 @@ public class Indexer {
 
 			// Tokenize
 			String[] tokens = tokenizer.tokenize(_indexDocument);
+
 			for (String token : tokens) {
 				// Lowercase and remove all non-alphabet character
 				token = token.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
@@ -130,12 +144,46 @@ public class Indexer {
 				token = stemmer.stem(token);
 				// Filter stop-word
 				if (!filter.isStopword(token)) {
-					int vocabularyId = _dictionary.checkAndAddWord(token);
-					Posting posting = _localPosting
-							.addAndGetPosting(vocabularyId);
+					int vocabularyId = findVocabularyIdInLocalList(token);
+					if (vocabularyId < 0) {
+						vocabularyId = _dictionary.checkAndAddWord(token);
+						TokenWithId newVocabulary = new TokenWithId(vocabularyId, token);
+						localTokenList.add(newVocabulary);
+					}
+					Posting posting = _localPosting.addAndGetPosting(vocabularyId);
 					posting.addDocId(docId);
 				}
 			}
+
+			pushLocalTokenList();
+		}
+	}
+
+	/**
+	 * Look for the vocabulary id of a token in the local token list <br/>
+	 * If the token is found, this token is encountered previously in the
+	 * document, hence has already been added into the dictionary <br/>
+	 * 
+	 * @param token
+	 *            to be searched
+	 * @return the vocabularyId of the token,If the token is not found, -1 is
+	 *         returned
+	 */
+	private int findVocabularyIdInLocalList(String token) {
+		for (TokenWithId v : localTokenList) {
+			if (v.token.compareTo(token) == 0) {
+				return v.id;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Update the local token list onto the dictionary <br/>
+	 */
+	private void pushLocalTokenList() {
+		for (TokenWithId v : localTokenList) {
+			_dictionary.increaseDocFreq(v.id);
 		}
 	}
 }

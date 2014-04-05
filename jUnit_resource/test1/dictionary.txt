@@ -1,5 +1,5 @@
-thi 2
+thi 1
 simpl 1
 text 1
-exampl 2
+exampl 1
 ye 1

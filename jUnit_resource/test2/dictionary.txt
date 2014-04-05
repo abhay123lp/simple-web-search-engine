@@ -1,7 +1,7 @@
-thi 3
+thi 2
 simpl 2
 text 2
-exampl 2
-ye 3
+exampl 1
+ye 2
 anoth 1
 file 1
