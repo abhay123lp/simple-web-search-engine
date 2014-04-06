@@ -391,7 +391,8 @@ public class IndexerTester {
 			assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
 			assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 
-			initializeFiles();
+			// TODO: remove this
+			//initializeFiles();
 
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -101,7 +101,7 @@ class Vocabulary implements Comparable<Vocabulary> {
 	 * 
 	 * @param amount
 	 */
-	public synchronized void increaseDocFreq(int amount) {
+	public void increaseDocFreq(int amount) {
 		_df+=amount;
 	}
 	

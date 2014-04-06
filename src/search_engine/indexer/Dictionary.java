@@ -43,11 +43,13 @@ class Dictionary {
 	 *             when the file cannot be opened
 	 */
 	public void start() throws IOException {
-		_no_instances++;
-		if (_no_instances == 1) {
-			fetchDictionary();
+		synchronized (_dictionary) {
+			_no_instances++;
+			if (_no_instances == 1) {
+				fetchDictionary();
+			}
+			_isInitialized = true;
 		}
-		_isInitialized = true;
 	}
 
 	/**
@@ -212,10 +214,12 @@ class Dictionary {
 	 *            of the document
 	 */
 	public void increaseDocFreq(int docId) {
-		Vocabulary vocabulary = getVocabulary(docId);
-
-		if (vocabulary != null) {
-			vocabulary.increaseDocFreq();
+		synchronized (_dictionary) {
+			Vocabulary vocabulary = getVocabulary(docId);
+	
+			if (vocabulary != null) {
+				vocabulary.increaseDocFreq();
+			}
 		}
 
 	}
