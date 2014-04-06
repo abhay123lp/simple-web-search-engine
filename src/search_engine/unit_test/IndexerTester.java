@@ -202,7 +202,7 @@ public class IndexerTester {
 		return fileContent;
 	}
 
-	// @Test
+	@Test
 	public void indexOneDocument() {
 		int testId = 1;
 
@@ -226,7 +226,7 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void indexTwoSimpleDocuments() {
 		int testId = 2;
 
@@ -252,7 +252,7 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void indexDuplicateDocuments() {
 		int testId = 3;
 
@@ -278,7 +278,7 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void concurentIndexDocument() {
 		int testId = 4;
 
@@ -309,7 +309,7 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void delayConccurentIndexDocument() {
 		int testId = 5;
 
@@ -391,8 +391,7 @@ public class IndexerTester {
 			assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
 			assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 
-			// TODO: remove this
-			//initializeFiles();
+			initializeFiles();
 
 		} catch (IOException e) {
 			e.printStackTrace();
