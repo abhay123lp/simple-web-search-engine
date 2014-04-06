@@ -1,7 +1,7 @@
-ye 15
-anoth 14
-text 15
 thi 2
 simpl 2
+text 3
+anoth 2
 exampl 1
+ye 3
 file 1

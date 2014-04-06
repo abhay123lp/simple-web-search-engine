@@ -27,6 +27,7 @@ public class IndexerTester {
 	public static Object lock = new Object();
 
 	private final String TESTING_CASE_NOTIFICATION = "\n\nTesting test case: ";
+	private final String TEST_RERUN = "\nTest re-run - ";
 	private final String TEST_CASE_DIRECTORY = "jUnit_resource/test%d/";
 	private final String DOCUMENT_FILE = "documents.txt";
 	private final String DICTIONARY_FILE = "dictionary.txt";
@@ -202,7 +203,7 @@ public class IndexerTester {
 		return fileContent;
 	}
 
-	@Test
+	// @Test
 	public void indexOneDocument() {
 		int testId = 1;
 
@@ -226,7 +227,7 @@ public class IndexerTester {
 		}
 	}
 
-	@Test
+	// @Test
 	public void indexTwoSimpleDocuments() {
 		int testId = 2;
 
@@ -252,7 +253,7 @@ public class IndexerTester {
 		}
 	}
 
-	@Test
+	// @Test
 	public void indexDuplicateDocuments() {
 		int testId = 3;
 
@@ -278,7 +279,7 @@ public class IndexerTester {
 		}
 	}
 
-	@Test
+	// @Test
 	public void concurentIndexDocument() {
 		int testId = 4;
 
@@ -312,29 +313,36 @@ public class IndexerTester {
 	@Test
 	public void delayConccurentIndexDocument() {
 		int testId = 5;
+		int numOfRerun = 100; // Rerun multiple times
 
 		System.out.println(TESTING_CASE_NOTIFICATION + testId);
 		retrieveExpectedResult(testId);
 
 		try {
-			initializeFiles();
-			no_threads = 3;
-
-			Timer indexTimer = new Timer("index1", false);
-			Timer index2Timer = new Timer("index2", false);
-			Timer index3Timer = new Timer("index3", false);
-			indexTimer.schedule(new ThreadIndexer("Delay www.dummy.com", "This is a simple text of my example! Yes this is an example"), 10);
-			index2Timer.schedule(new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes"), 10);
-			index3Timer.schedule(new ThreadIndexer("www.example.com", "Yes another text"), 10);
-
-			while (no_threads != 0) {
-				Thread.yield();
+			// TODO: number of lines in documentList is not correct
+			// This is due to 2 threads fetching the document list concurrently
+			for (int i=0; i<numOfRerun; i++) {
+				System.out.println (TEST_RERUN + i);
+				initializeFiles();
+				no_threads = 3;
+	
+				Timer indexTimer = new Timer("index1", false);
+				Timer index2Timer = new Timer("index2", false);
+				Timer index3Timer = new Timer("index3", false);
+				indexTimer.schedule(new ThreadIndexer("www.dummy.com", "This is a simple text of my example! Yes this is an example"), 10);
+				index2Timer.schedule(new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes"), 10);
+				index3Timer.schedule(new ThreadIndexer("www.example.com", "Yes another text"), 10);
+	
+				while (no_threads != 0) {
+					Thread.yield();
+				}
+	
+				assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
+				assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 			}
 
-			assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
-			assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
-
-			initializeFiles();
+			// TODO: uncomment this
+			// initializeFiles();
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -342,7 +350,7 @@ public class IndexerTester {
 		}
 	}
 
-	@Test
+	// @Test
 	public void heavyConccurentIndexDocument() {
 		int testId = 6;
 

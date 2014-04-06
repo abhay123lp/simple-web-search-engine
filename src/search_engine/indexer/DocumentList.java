@@ -62,11 +62,13 @@ class DocumentList {
 	 * 
 	 */
 	public void close() throws IOException {
-		_no_instances--;
-		if (_no_instances == 0) {
-			writeToFile();
+		synchronized (_documentList) {
+			_no_instances--;
+			if (_no_instances == 0) {
+				writeToFile();
+			}
+			_isInitialzed = false;
 		}
-		_isInitialzed = false;
 	}
 
 	/**
@@ -79,9 +81,9 @@ class DocumentList {
 	 */
 	public int addDocument(String docName) {
 		if (_isInitialzed) {
-			int docId = getDocId(docName);
-			if (docId == -1) {
-				synchronized (_documentList) {
+			synchronized (_documentList) {
+				int docId = getDocId(docName);
+				if (docId == -1) {
 					_documentList.add(docName);
 					return _documentList.size() - 1;
 				}
@@ -139,19 +141,17 @@ class DocumentList {
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
 
-		synchronized (_documentList) {
-			// Initialise empty dictionary
-			_documentList = new LinkedList<String>();
-	
-			// Fetch data from file into local dictionary
-			String nextLine = null;
-			do {
-				nextLine = br.readLine();
-				if (nextLine != null) {
-					_documentList.add(nextLine);
-				}
-			} while (nextLine != null);
-		}
+		// Initialise empty dictionary
+		_documentList = new LinkedList<String>();
+
+		// Fetch data from file into local dictionary
+		String nextLine = null;
+		do {
+			nextLine = br.readLine();
+			if (nextLine != null) {
+				_documentList.add(nextLine);
+			}
+		} while (nextLine != null);
 
 		// Close stream readers
 		br.close();
@@ -172,10 +172,8 @@ class DocumentList {
 		BufferedWriter bw = new BufferedWriter(osw);
 
 		// Write each document to each line of the file.
-		synchronized (_documentList) {
-			for (String docName : _documentList) {
-				bw.write(docName + "\n");
-			}
+		for (String docName : _documentList) {
+			bw.write(docName + "\n");
 		}
 
 		// Close stream writers
