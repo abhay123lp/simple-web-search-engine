@@ -203,7 +203,7 @@ public class IndexerTester {
 		return fileContent;
 	}
 
-	// @Test
+	@Test
 	public void indexOneDocument() {
 		int testId = 1;
 
@@ -227,7 +227,7 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void indexTwoSimpleDocuments() {
 		int testId = 2;
 
@@ -253,7 +253,7 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void indexDuplicateDocuments() {
 		int testId = 3;
 
@@ -279,8 +279,8 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
-	public void concurentIndexDocument() {
+	@Test
+	public void overlapIndexDocument() {
 		int testId = 4;
 
 		System.out.println(TESTING_CASE_NOTIFICATION + testId);
@@ -289,11 +289,11 @@ public class IndexerTester {
 		try {
 			initializeFiles();
 			no_threads = 2;
-
-			ThreadIndexer indexer = new ThreadIndexer("www.dummy.com", "This is a simple text of my example! Yes this is an example");
-			ThreadIndexer indexer2 = new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes");
-			indexer.run();
-			indexer2.run();
+			
+			Timer indexTimer = new Timer("index1", false);
+			Timer index2Timer = new Timer("index2", false);
+			indexTimer.schedule(new ThreadIndexer("www.dummy.com", "This is a simple text of my example! Yes this is an example"), 10);
+			index2Timer.schedule(new ThreadIndexer("www.anotherdummy.com", "Another simple text file Yes this is yes"), 12);
 
 			while (no_threads != 0) {
 				Thread.yield();
@@ -311,7 +311,7 @@ public class IndexerTester {
 	}
 
 	@Test
-	public void delayConccurentIndexDocument() {
+	public void conccurentIndexDocument() {
 		int testId = 5;
 		int numOfRerun = 100; // Rerun multiple times
 
@@ -319,8 +319,6 @@ public class IndexerTester {
 		retrieveExpectedResult(testId);
 
 		try {
-			// TODO: number of lines in documentList is not correct
-			// This is due to 2 threads fetching the document list concurrently
 			for (int i=0; i<numOfRerun; i++) {
 				System.out.println (TEST_RERUN + i);
 				initializeFiles();
@@ -341,7 +339,7 @@ public class IndexerTester {
 				assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 			}
 
-			// TODO: uncomment this
+			// TODO: uncomment this after debug
 			// initializeFiles();
 
 		} catch (IOException e) {
@@ -350,54 +348,58 @@ public class IndexerTester {
 		}
 	}
 
-	// @Test
+	@Test
 	public void heavyConccurentIndexDocument() {
 		int testId = 6;
+		int numOfRerun = 100; // Rerun multiple times
 
 		System.out.println(TESTING_CASE_NOTIFICATION + testId);
 		retrieveExpectedResult(testId);
 
 		try {
-			initializeFiles();
-			no_threads = 15;
-
-			Timer indexTimer = new Timer("index1", false);
-			Timer indexTimer2 = new Timer("index2", false);
-			Timer indexTimer3 = new Timer("index3", false);
-			Timer indexTimer4 = new Timer("index4", false);
-			Timer indexTimer5 = new Timer("index5", false);
-			Timer indexTimer6 = new Timer("index6", false);
-			Timer indexTimer7 = new Timer("index7", false);
-			Timer indexTimer8 = new Timer("index8", false);
-			Timer indexTimer9 = new Timer("index9", false);
-			Timer indexTimer10 = new Timer("index10", false);
-			Timer indexTimer11 = new Timer("index11", false);
-			Timer indexTimer12 = new Timer("index12", false);
-			Timer indexTimer13 = new Timer("index13", false);
-			Timer indexTimer14 = new Timer("index14", false);
-			Timer indexTimer15 = new Timer("index15", false);
-			indexTimer.schedule(new ThreadIndexer("www.example.com", "This is a simple text of my example! Yes this is an example"), 10);
-			indexTimer2.schedule(new ThreadIndexer("www.example.com2", "Another simple text file Yes this is yes"), 10);
-			indexTimer3.schedule(new ThreadIndexer("www.example.com3", "Yes another text"), 10);
-			indexTimer4.schedule(new ThreadIndexer("www.example.com4", "Yes another text"), 10);
-			indexTimer5.schedule(new ThreadIndexer("www.example.com5", "Yes another text"), 10);
-			indexTimer6.schedule(new ThreadIndexer("www.example.com6", "Yes another text"), 10);
-			indexTimer7.schedule(new ThreadIndexer("www.example.com7", "Yes another text"), 10);
-			indexTimer8.schedule(new ThreadIndexer("www.example.com8", "Yes another text"), 10);
-			indexTimer9.schedule(new ThreadIndexer("www.example.com9", "Yes another text"), 10);
-			indexTimer10.schedule(new ThreadIndexer("www.example.com10", "Yes another text"), 10);
-			indexTimer11.schedule(new ThreadIndexer("www.example.com11", "Yes another text"), 10);
-			indexTimer12.schedule(new ThreadIndexer("www.example.com12", "Yes another text"), 10);
-			indexTimer13.schedule(new ThreadIndexer("www.example.com13", "Yes another text"), 10);
-			indexTimer14.schedule(new ThreadIndexer("www.example.com14", "Yes another text"), 10);
-			indexTimer15.schedule(new ThreadIndexer("www.example.com15", "Yes another text"), 10);
-
-			while (no_threads != 0) {
-				Thread.yield();
+			for (int i=0; i<numOfRerun; i++) {
+				System.out.println (TEST_RERUN + i);
+				initializeFiles();
+				no_threads = 15;
+	
+				Timer indexTimer = new Timer("index1", false);
+				Timer indexTimer2 = new Timer("index2", false);
+				Timer indexTimer3 = new Timer("index3", false);
+				Timer indexTimer4 = new Timer("index4", false);
+				Timer indexTimer5 = new Timer("index5", false);
+				Timer indexTimer6 = new Timer("index6", false);
+				Timer indexTimer7 = new Timer("index7", false);
+				Timer indexTimer8 = new Timer("index8", false);
+				Timer indexTimer9 = new Timer("index9", false);
+				Timer indexTimer10 = new Timer("index10", false);
+				Timer indexTimer11 = new Timer("index11", false);
+				Timer indexTimer12 = new Timer("index12", false);
+				Timer indexTimer13 = new Timer("index13", false);
+				Timer indexTimer14 = new Timer("index14", false);
+				Timer indexTimer15 = new Timer("index15", false);
+				indexTimer.schedule(new ThreadIndexer("www.example.com", "This is a simple text of my example! Yes this is an example"), 10);
+				indexTimer2.schedule(new ThreadIndexer("www.example.com2", "Another simple text file Yes this is yes"), 10);
+				indexTimer3.schedule(new ThreadIndexer("www.example.com3", "Yes another text"), 10);
+				indexTimer4.schedule(new ThreadIndexer("www.example.com4", "Yes another text"), 10);
+				indexTimer5.schedule(new ThreadIndexer("www.example.com5", "Yes another text"), 10);
+				indexTimer6.schedule(new ThreadIndexer("www.example.com6", "Yes another text"), 10);
+				indexTimer7.schedule(new ThreadIndexer("www.example.com7", "Yes another text"), 10);
+				indexTimer8.schedule(new ThreadIndexer("www.example.com8", "Yes another text"), 10);
+				indexTimer9.schedule(new ThreadIndexer("www.example.com9", "Yes another text"), 10);
+				indexTimer10.schedule(new ThreadIndexer("www.example.com10", "Yes another text"), 10);
+				indexTimer11.schedule(new ThreadIndexer("www.example.com11", "Yes another text"), 10);
+				indexTimer12.schedule(new ThreadIndexer("www.example.com12", "Yes another text"), 10);
+				indexTimer13.schedule(new ThreadIndexer("www.example.com13", "Yes another text"), 10);
+				indexTimer14.schedule(new ThreadIndexer("www.example.com14", "Yes another text"), 10);
+				indexTimer15.schedule(new ThreadIndexer("www.example.com15", "Yes another text"), 10);
+	
+				while (no_threads != 0) {
+					Thread.yield();
+				}
+	
+				assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
+				assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 			}
-
-			assertTrue(contentLooselyEquals(expectedDocumentFile, documentFile));
-			assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 
 			initializeFiles();
 

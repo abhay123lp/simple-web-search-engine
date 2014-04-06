@@ -141,8 +141,9 @@ class DocumentList {
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
 
-		// Initialise empty dictionary
-		_documentList = new LinkedList<String>();
+		// Clear the documentList
+		// TODO: should not initialise the documentList as it is being used as a synchronisation lock
+		_documentList.clear();
 
 		// Fetch data from file into local dictionary
 		String nextLine = null;

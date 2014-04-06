@@ -165,8 +165,9 @@ class Dictionary {
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
 
-		// Initialise empty dictionary
-		_dictionary = new ArrayList<Vocabulary>();
+		// Empty the dictionary
+		// TODO should not initialise the dictionary (same as documentList's problem)
+		_dictionary.clear();
 
 		// Fetch data from file into local dictionary
 		String nextLine = null;
