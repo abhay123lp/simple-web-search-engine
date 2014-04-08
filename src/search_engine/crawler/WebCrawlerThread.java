@@ -32,7 +32,7 @@ public class WebCrawlerThread extends WebCrawler {
 	private final long CRAWLING_TIMEOUT_ERROR = -2;
 	private final long SOCKET_TIMEOUT_ERROR = -3;
 	private final long HOST_ERROR = -4;
-	private final long CRAWLING_TIMEOUT = 5000; // in milliseconds
+	private final long CRAWLING_TIMEOUT = 10000; // in milliseconds
 	private final int SO_TIMEOUT = 500; // in milliseconds
 
 	// Port number for web server
@@ -93,11 +93,18 @@ public class WebCrawlerThread extends WebCrawler {
 				// No error: report crawl result
 				WebCrawler.ReportCrawlResult(startingURL, responseTime);
 
-				// Check for redirection and check crawlers in the redirected
-				// page
-				checkRedirection(headerContent);
-				// Try to crawl into the page
-				sendCrawlersInPage(pageContent);
+				// Further process only when the page is English
+				if (isContentLanguage(headerContent, "en")) {
+					// Check for redirection and check crawlers in the
+					// redirected
+					// page
+					checkRedirection(headerContent);
+
+					// Try to crawl into the page
+					sendCrawlersInPage(pageContent);
+				} else {
+					System.out.println("Page is not English");
+				}
 			} else if (responseTime == CRAWLING_IO_ERROR) {
 				// IO Error: Report back
 			} else if (responseTime == CRAWLING_TIMEOUT_ERROR) {
@@ -123,6 +130,7 @@ public class WebCrawlerThread extends WebCrawler {
 	private long loadPageAndGetResponseTime(String link) {
 		try {
 			String hostName = getHostName(startingURL);
+			String pathName = getPathName(startingURL);
 
 			try {
 				httpSocket = new Socket(hostName, portNumber);
@@ -134,9 +142,10 @@ public class WebCrawlerThread extends WebCrawler {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(httpSocket.getInputStream()));
 
 			// Send HTTP Get Request
-			writer.println("GET / HTTP/1.1\r");
-			writer.println("Host: " + startingURL + "\r");
+			writer.println("GET " + pathName + " HTTP/1.1\r");
+			writer.println("Host: " + hostName + "\r");
 			writer.println("Connection: close\r");
+			writer.println("Accept-Language: en\r");
 			writer.println();
 
 			long startingTime = System.currentTimeMillis(); // Start timing
@@ -150,11 +159,7 @@ public class WebCrawlerThread extends WebCrawler {
 
 			do {
 				newLine = reader.readLine(); // read each line in
-				
-				if (newLine == null) {
-					break;
-				}
-				
+
 				if (responseTime == -1) {
 					// Response time taken when the first few bytes are
 					// available in the reader stream
@@ -164,6 +169,10 @@ public class WebCrawlerThread extends WebCrawler {
 				if ((newLine != null) && (newLine.compareTo("") == 0)) {
 					isReadingResponseReader = false; // now reading to the
 														// package content
+				}
+
+				if (newLine == null) {
+					break;
 				}
 
 				if (!isReadingResponseReader) {
@@ -191,12 +200,13 @@ public class WebCrawlerThread extends WebCrawler {
 
 			return responseTime - startingTime;
 		} catch (SocketTimeoutException e1) {
-			// Socket timeout: readLine() has been blocked for SO_TIMEOUT milliseconds
+			// Socket timeout: readLine() has been blocked for SO_TIMEOUT
+			// milliseconds
 			return SOCKET_TIMEOUT_ERROR;
 		} catch (IOException e) {
 			// Error when set up input stream and reader
 			return CRAWLING_IO_ERROR;
-		} 
+		}
 	}
 
 	/**
@@ -228,6 +238,32 @@ public class WebCrawlerThread extends WebCrawler {
 	}
 
 	/**
+	 * Check the header for Content language of a specific language <br/>
+	 * Only return false when the page header explicitly states the language are
+	 * not supported <br/>
+	 * 
+	 * @param the
+	 *            headerContent
+	 * @param language
+	 *            the language code (i.e: "en" for English)
+	 * @return false if the Content-Language in the header does not the language
+	 *         code, otherwise true
+	 */
+	private boolean isContentLanguage(List<String> headerContent, String language) {
+		try {
+			for (String line : headerContent) {
+				if (line.contains("Content-Language") && !line.contains(language)) {
+					return false;
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Cannot read content header for page " + startingURL);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Check the header for redirection If recieve a 3xx, get the link from
 	 * LOCATION field and follow that link
 	 * 
@@ -238,7 +274,7 @@ public class WebCrawlerThread extends WebCrawler {
 			String firstHeaderLine = headerContent.get(0);
 			String[] firstHeaderLineSplit = firstHeaderLine.split(" ");
 			int httpCode = Integer.parseInt(firstHeaderLineSplit[1]);
-		
+
 			if (299 < httpCode && httpCode < 400) { // HTTP Code = 3xx
 				for (String headerLine : headerContent) {
 					String[] headerLineSplit = headerLine.split(" ");
@@ -249,7 +285,7 @@ public class WebCrawlerThread extends WebCrawler {
 				}
 			}
 		} catch (Exception e) {
-			System.out.println ("Cannot read content header for page " + startingURL);
+			System.out.println("Cannot read content header for page " + startingURL);
 		}
 	}
 
@@ -260,7 +296,14 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @param link
 	 */
 	private void sendCrawlerIntoLink(String link) {
-		link = reparseLink(link);
+		String currentHostName = getHostName(startingURL);
+		String linkHostName = getHostName(link);
+		if (linkHostName != null) {
+			link = reparseLink(link);
+		} else {
+			link = reparseLink(currentHostName + link);
+		}
+
 		if (WebCrawler.CheckAndAddLink(link)) { // check whether the link has
 												// been crawled
 			if (depth < maxDepth - 1) {
@@ -281,10 +324,14 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @return the host name of the URL
 	 */
 	private String getHostName(String link) {
-		if(!link.startsWith("http") && !link.startsWith("https")){
-	         link = "http://" + link;
-	    }
-		
+		if (!link.startsWith("http") && !link.startsWith("https")) {
+			if (link.startsWith("//")) {
+				link = "http:" + link;
+			} else {
+				link = "http://" + link;
+			}
+		}
+
 		URI uri;
 		try {
 			uri = new URI(link);
@@ -293,6 +340,31 @@ public class WebCrawlerThread extends WebCrawler {
 		}
 
 		return uri.getHost();
+	}
+
+	/**
+	 * Get the Host Name from an URL
+	 * 
+	 * @param link
+	 * @return the host name of the URL
+	 */
+	private String getPathName(String link) {
+		if (!link.startsWith("http") && !link.startsWith("https")) {
+			if (link.startsWith("//")) {
+				link = "http:" + link;
+			} else {
+				link = "http://" + link;
+			}
+		}
+
+		URI uri;
+		try {
+			uri = new URI(link);
+		} catch (URISyntaxException e) {
+			return "";
+		}
+
+		return uri.getRawPath();
 	}
 
 	/**

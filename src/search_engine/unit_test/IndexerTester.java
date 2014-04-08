@@ -339,8 +339,7 @@ public class IndexerTester {
 				assertTrue(contentLooselyEquals(expectedDictionaryFile, dictionaryFile));
 			}
 
-			// TODO: uncomment this after debug
-			// initializeFiles();
+			initializeFiles();
 
 		} catch (IOException e) {
 			e.printStackTrace();
