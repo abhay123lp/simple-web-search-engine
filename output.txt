@@ -1,2 +1,2 @@
-Crawl to en.wikipedia.org
-Response Time: 190
+Crawl to en.wikipedia.org/wiki/Main_Page
+Response Time: 734

@@ -1,8 +1,12 @@
 package search_engine.crawler;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -42,6 +46,10 @@ public class WebCrawlerThread extends WebCrawler {
 	private final int CRAWLING_RATE = 500;
 	// Used to extract redirect links
 	private final String LOCATION_FIELD = "LOCATION:";
+
+	// Used to store the crawled documents
+	private final String CRAWLED_FOLDER = "CrawledDocs/doc%d.txt";
+	private static int docId = 0;
 
 	private String startingURL;
 	private Document pageContent;
@@ -229,10 +237,71 @@ public class WebCrawlerThread extends WebCrawler {
 
 		String text = pageContent.body().text();
 
-		Indexer indexer = new Indexer(startingURL, text);
+		// Suggested to do one of each
+		// indexDocument(startingURL, text);
+		writeDocument(startingURL, text);
+
+	}
+
+	/**
+	 * Index the document <br/>
+	 * 
+	 * @param docName
+	 *            the name of the document <br/>
+	 * @param docContent
+	 *            the content of the document <br/>
+	 */
+	private void indexDocument(String docName, String docContent) {
+		Indexer indexer = new Indexer(docName, docContent);
 		try {
 			indexer.start();
 		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Get a unique docId <br/>
+	 * 
+	 * @return a unique docId number
+	 */
+	private static synchronized int getDocId() {
+		return docId++;
+	}
+
+	/**
+	 * Write the document out to the file <br/>
+	 * This can be used to save the document for crawling later, or for
+	 * inspection purposes <br/>
+	 * 
+	 * @param docName
+	 *            the name of the document <br/>
+	 * @param docContent
+	 *            the content of the document <br/>
+	 */
+	private void writeDocument(String docName, String docContent) {
+		try {
+			int docId = getDocId();
+
+			// Create new one if it doesn't exist
+			File outputFile = new File(String.format(CRAWLED_FOLDER, docId));
+			if (!outputFile.exists()) {
+				outputFile.createNewFile();
+			}
+
+			// Initialise the Stream writers
+			FileOutputStream fos = new FileOutputStream(outputFile, false);
+			OutputStreamWriter osw = new OutputStreamWriter(fos);
+			BufferedWriter bw = new BufferedWriter(osw);
+
+			bw.write(docName + "\n");
+			bw.write(docContent);
+
+			// Close stream writers
+			bw.close();
+			osw.close();
+			fos.close();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -363,7 +432,7 @@ public class WebCrawlerThread extends WebCrawler {
 		} catch (URISyntaxException e) {
 			return "";
 		}
-		
+
 		String pathName = uri.getRawPath();
 		if (pathName.compareTo("") == 0) {
 			pathName = "/";
@@ -388,6 +457,10 @@ public class WebCrawlerThread extends WebCrawler {
 			return "";
 		}
 
-		return uri.getHost() + uri.getRawPath();
+		if (uri.getHost() == null) {
+			return uri.getRawPath();
+		} else {
+			return uri.getHost() + uri.getRawPath();
+		}
 	}
 }
