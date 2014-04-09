@@ -33,7 +33,7 @@ public class WebCrawlerThread extends WebCrawler {
 	private final long SOCKET_TIMEOUT_ERROR = -3;
 	private final long HOST_ERROR = -4;
 	private final long CRAWLING_TIMEOUT = 10000; // in milliseconds
-	private final int SO_TIMEOUT = 500; // in milliseconds
+	private final int SO_TIMEOUT = 5000; // in milliseconds
 
 	// Port number for web server
 	private final int DEFAULT_PORT_NUMBER_USED = 80;
@@ -147,12 +147,6 @@ public class WebCrawlerThread extends WebCrawler {
 			writer.println("Connection: close\r");
 			writer.println("Accept-Language: en\r");
 			writer.println();
-			
-			System.out.print("GET " + pathName + " HTTP/1.1\r");
-			System.out.print("Host: " + hostName + "\r");
-			System.out.print("Connection: close\r");
-			System.out.print("Accept-Language: en\r");
-			System.out.print("\r");
 
 			long startingTime = System.currentTimeMillis(); // Start timing
 			long responseTime = -1;
@@ -180,9 +174,6 @@ public class WebCrawlerThread extends WebCrawler {
 				if (newLine == null) {
 					break;
 				}
-				
-				// TODO: remove this
-				System.out.println (newLine);
 
 				if (!isReadingResponseReader) {
 					htmlString += newLine; // concat to the htmlString
