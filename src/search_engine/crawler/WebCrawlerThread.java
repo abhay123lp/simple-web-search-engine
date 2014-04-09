@@ -147,6 +147,12 @@ public class WebCrawlerThread extends WebCrawler {
 			writer.println("Connection: close\r");
 			writer.println("Accept-Language: en\r");
 			writer.println();
+			
+			System.out.print("GET " + pathName + " HTTP/1.1\r");
+			System.out.print("Host: " + hostName + "\r");
+			System.out.print("Connection: close\r");
+			System.out.print("Accept-Language: en\r");
+			System.out.print("\r");
 
 			long startingTime = System.currentTimeMillis(); // Start timing
 			long responseTime = -1;
@@ -174,6 +180,9 @@ public class WebCrawlerThread extends WebCrawler {
 				if (newLine == null) {
 					break;
 				}
+				
+				// TODO: remove this
+				System.out.println (newLine);
 
 				if (!isReadingResponseReader) {
 					htmlString += newLine; // concat to the htmlString
@@ -363,8 +372,13 @@ public class WebCrawlerThread extends WebCrawler {
 		} catch (URISyntaxException e) {
 			return "";
 		}
+		
+		String pathName = uri.getRawPath();
+		if (pathName.compareTo("") == 0) {
+			pathName = "/";
+		}
 
-		return uri.getRawPath();
+		return pathName;
 	}
 
 	/**
