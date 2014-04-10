@@ -57,8 +57,7 @@ public class WebCrawlerThread extends WebCrawler {
 
 	// Used to store the crawled documents
 	private final String CRAWLED_FOLDER = "CrawledDocs/doc%d.txt";
-	// TODO: change back to 0
-	private static int docId = 1422;
+	private static int docId = 0;
 
 	private String startingURL;
 	private Document pageContent;
@@ -300,8 +299,8 @@ public class WebCrawlerThread extends WebCrawler {
 		}
 
 		// TODO: Choose either to do one
-		// indexDocument(startingURL, text);
-		writeDocument(startingURL, text);
+		indexDocument(startingURL, text);
+		// writeDocument(startingURL, text);
 	}
 
 	/**
