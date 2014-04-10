@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.Timer;
 
 import org.jsoup.Jsoup;
@@ -32,6 +33,13 @@ import search_engine.indexer.Indexer;
  */
 
 public class WebCrawlerThread extends WebCrawler {
+	private static int no_instances = 0;
+	private static Object lock = new Object();
+
+	private static Stack<WebLink> crawlingPool = new Stack<WebLink>();
+
+	private static final int MAX_INSTANCES = 5;
+
 	private final long CRAWLING_IO_ERROR = -1;
 	private final long CRAWLING_TIMEOUT_ERROR = -2;
 	private final long SOCKET_TIMEOUT_ERROR = -3;
@@ -49,7 +57,8 @@ public class WebCrawlerThread extends WebCrawler {
 
 	// Used to store the crawled documents
 	private final String CRAWLED_FOLDER = "CrawledDocs/doc%d.txt";
-	private static int docId = 0;
+	// TODO: change back to 0
+	private static int docId = 1422;
 
 	private String startingURL;
 	private Document pageContent;
@@ -79,6 +88,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @param portNumber
 	 */
 	public WebCrawlerThread(String startingURL, int depth, int maxDepth, int portNumber) {
+
 		this.startingURL = startingURL;
 		this.depth = depth;
 		this.maxDepth = maxDepth;
@@ -90,6 +100,11 @@ public class WebCrawlerThread extends WebCrawler {
 	 * then quit Else try load the starting url and report
 	 */
 	public void run() {
+		synchronized (lock) {
+			no_instances++;
+			System.out.println("++ Current thread count: " + no_instances + ". Pool size: " + crawlingPool.size());
+		}
+		
 		if (depth < maxDepth) {
 			System.out.println("Attempt to crawl " + startingURL);
 			// not reaching the maxDepth
@@ -104,12 +119,11 @@ public class WebCrawlerThread extends WebCrawler {
 				// Further process only when the page is English
 				if (isContentLanguage(headerContent, "en")) {
 					// Check for redirection and check crawlers in the
-					// redirected
-					// page
+					// redirected page
 					checkRedirection(headerContent);
 
-					// Try to crawl into the page
-					sendCrawlersInPage(pageContent);
+					// Retrieve links in the page content
+					retrieveLinks(pageContent);
 				} else {
 					System.out.println("Page is not English");
 				}
@@ -121,6 +135,44 @@ public class WebCrawlerThread extends WebCrawler {
 				// Timeout Error: Report back
 			} else if (responseTime == HOST_ERROR) {
 				// Timeout Error: Report back
+			}
+			
+			sendCrawlers();
+		}
+
+		synchronized (lock) {
+			no_instances--;
+			System.out.println("-- Current thread count: " + no_instances + ". Pool size: " + crawlingPool.size());
+		}
+	}
+
+	/**
+	 * Start sending crawlers into links that in the pool <br/>
+	 * The sending rate is controlled by CRAWLING_RATE, which defines the time
+	 * between 2 consecutive sends <br/>
+	 * The number of active threads is limited by MAX_INSTANCES, so if the
+	 * maximum thread count is reach, no thread spawned. Otherwise it would
+	 * spawn 5 times<br/>
+	 */
+	private void sendCrawlers() {
+		boolean isCongested;
+		synchronized (lock) {
+			isCongested = no_instances >= MAX_INSTANCES;
+		}
+
+		if (isCongested) {
+			// congested: spawn no thread
+		} else {
+			// no congested, spawn 5 threads
+			synchronized (crawlingPool) {
+				try {
+					for (int i = 0; i < 5; i++) {
+						WebLink webLink = crawlingPool.pop();
+						sendCrawlerIntoLink(webLink.getLink(), webLink.getDepth());
+					}
+				} catch (Exception e) {
+					// Empty stack. Do nothing
+				}
 			}
 		}
 	}
@@ -224,7 +276,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @param pageContent
 	 *            : the HTML Document of the page
 	 */
-	private void sendCrawlersInPage(Document pageContent) {
+	private void retrieveLinks(Document pageContent) {
 		Elements links = pageContent.getElementsByTag("a"); // Get list of a
 															// tags
 
@@ -232,15 +284,24 @@ public class WebCrawlerThread extends WebCrawler {
 		for (int i = 0; i < links.size(); i++) {
 			Element link = links.get(i);
 			String linkHref = link.attr("href"); // retrieve the href field
-			sendCrawlerIntoLink(linkHref);
+			WebLink newLink = new WebLink(linkHref, depth + 1);
+			if (newLink.getDepth() < maxDepth) {
+				synchronized (crawlingPool) {
+					crawlingPool.push(newLink);
+				}
+			}
 		}
 
-		String text = pageContent.body().text();
+		String text;
+		try {
+			text = pageContent.body().text();
+		} catch (Exception e) {
+			return;
+		}
 
-		// Suggested to do one of each
+		// TODO: Choose either to do one
 		// indexDocument(startingURL, text);
 		writeDocument(startingURL, text);
-
 	}
 
 	/**
@@ -349,7 +410,12 @@ public class WebCrawlerThread extends WebCrawler {
 					String[] headerLineSplit = headerLine.split(" ");
 					if (headerLineSplit[0].equalsIgnoreCase(LOCATION_FIELD)) {
 						String redirectedURL = headerLineSplit[1];
-						sendCrawlerIntoLink(redirectedURL);
+						WebLink newLink = new WebLink(redirectedURL, depth + 1);
+						if (newLink.getDepth() < maxDepth) {
+							synchronized (crawlingPool) {
+								crawlingPool.push(newLink);
+							}
+						}
 					}
 				}
 			}
@@ -364,7 +430,7 @@ public class WebCrawlerThread extends WebCrawler {
 	 * 
 	 * @param link
 	 */
-	private void sendCrawlerIntoLink(String link) {
+	private void sendCrawlerIntoLink(String link, int depth) {
 		String currentHostName = getHostName(startingURL);
 		String linkHostName = getHostName(link);
 		if (linkHostName != null) {
@@ -380,8 +446,8 @@ public class WebCrawlerThread extends WebCrawler {
 				// retrieved link
 				// false = not Daemon: the application will wait until the
 				// children crawlers finish before terminating
-				Timer crawlingTimer = new Timer("crawlingTimer", false);
-				crawlingTimer.schedule(new WebCrawlerThread(link, depth + 1, maxDepth, DEFAULT_PORT_NUMBER_USED), CRAWLING_RATE);
+				Timer crawlingTimer = new Timer("crawlingTimer" + depth, false);
+				crawlingTimer.schedule(new WebCrawlerThread(link, depth, maxDepth, DEFAULT_PORT_NUMBER_USED), CRAWLING_RATE);
 			}
 		}
 	}
@@ -393,6 +459,11 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @return the host name of the URL
 	 */
 	private String getHostName(String link) {
+		// TODO: crawl to null sometimes
+		if (link == null) {
+			return "";
+		}
+		
 		if (!link.startsWith("http") && !link.startsWith("https")) {
 			if (link.startsWith("//")) {
 				link = "http:" + link;
@@ -418,6 +489,9 @@ public class WebCrawlerThread extends WebCrawler {
 	 * @return the host name of the URL
 	 */
 	private String getPathName(String link) {
+		if (link == null) {
+			return "";
+		}
 		if (!link.startsWith("http") && !link.startsWith("https")) {
 			if (link.startsWith("//")) {
 				link = "http:" + link;
