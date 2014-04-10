@@ -94,8 +94,6 @@ public class Indexer {
 	 *             when cannot open the database
 	 */
 	public void start() throws IOException {
-		System.out.println("Indexing document " + _docName);
-
 		// Initialise localPosting, dictionary and documentList
 		_localPosting = new PostingList();
 		_dictionary = new Dictionary();
@@ -108,8 +106,6 @@ public class Indexer {
 		_documentList.close();
 		_dictionary.close();
 		_localPosting.writeToFile();
-		
-		System.out.println("Done indexing document " + _docName);
 	}
 
 	/**
