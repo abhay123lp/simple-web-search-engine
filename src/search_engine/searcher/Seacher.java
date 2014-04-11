@@ -3,7 +3,7 @@ package search_engine.searcher;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class Main {
+public class Seacher {
     public static void main (String[] args) {
         String query = "";
         for (int i=0; i<args.length; i++) {
