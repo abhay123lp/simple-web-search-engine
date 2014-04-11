@@ -1,0 +1,2 @@
+web.archive.org/web/*/http://facebook.com
+a44 Internet Archive Wayback Machine Internet Archive's Wayback Machine Latest Show All Page cannot be crawled or displayed due to robots.txt. See facebook.com robots.txt page. Learn more about robots.txt. The Wayback Machine is an initiative of the Internet Archive, a 501(c)(3) non-profit, building a digital library of Internet sites and other cultural artifacts in digital form. Other projects include Open Library & archive-it.org. Your use of the Wayback Machine is subject to the Internet Archive's Terms of Use.
